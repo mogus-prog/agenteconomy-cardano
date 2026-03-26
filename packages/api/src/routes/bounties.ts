@@ -520,6 +520,36 @@ export default async function bountiesRoutes(fastify: FastifyInstance): Promise<
   );
 
   // -------------------------------------------------------------------------
+  // PATCH /v1/bounties/:id/status — update bounty status (for recording on-chain actions)
+  // -------------------------------------------------------------------------
+  const UpdateStatusBodySchema = z.object({
+    status: z.enum(["open", "claimed", "submitted", "completed", "disputed", "refunded", "cancelled"]),
+    agentAddress: z.string().optional(),
+    resultIpfs: z.string().optional(),
+    txHash: z.string().optional(),
+  });
+
+  fastify.patch(
+    "/v1/bounties/:id/status",
+    async (request: FastifyRequest<{ Params: BountyIdParams }>, reply: FastifyReply) => {
+      const { id } = BountyIdParamsSchema.parse(request.params);
+      const body = UpdateStatusBodySchema.parse(request.body);
+
+      const updates: Record<string, unknown> = { status: body.status };
+      if (body.agentAddress) updates.agentAddress = body.agentAddress;
+      if (body.resultIpfs) updates.resultIpfs = body.resultIpfs;
+      if (body.status === "claimed") updates.claimedAt = new Date();
+      if (body.status === "submitted") updates.submittedAt = new Date();
+      if (body.status === "completed") updates.completedAt = new Date();
+      if (body.txHash) updates.claimTxHash = body.txHash;
+
+      await db.update(bounties).set(updates).where(eq(bounties.id, id));
+
+      return reply.status(200).send({ id, ...updates });
+    },
+  );
+
+  // -------------------------------------------------------------------------
   // POST /v1/bounties/submit-post — submit signed tx
   // -------------------------------------------------------------------------
   fastify.post<{ Body: SubmitPostBody }>(
