@@ -6,7 +6,7 @@ import { config } from "../config.js";
 import { db } from "../db/index.js";
 import { bounties, transactions, disputes } from "../db/schema.js";
 import { submitTx } from "../services/blockfrost.js";
-import { fetchFromIPFS } from "../services/ipfs.js";
+import { fetchFromIPFS, uploadToIPFS } from "../services/ipfs.js";
 import { dispatchWebhookEvent } from "../services/webhookDispatcher.js";
 
 // ---------------------------------------------------------------------------
@@ -33,14 +33,18 @@ const BountyListQuerySchema = z.object({
 const BuildPostBodySchema = z.object({
   posterAddress: z.string(),
   title: z.string(),
-  descriptionIpfs: z.string(),
+  description: z.string().optional(),
+  descriptionIpfs: z.string().optional(),
   category: z.string(),
   difficulty: z.enum(["easy", "medium", "hard", "expert"]),
   rewardLovelace: z.string(),
   deadline: z.string().datetime(),
   verificationType: z.enum(["oracle", "auto", "manual"]),
   tags: z.array(z.string()).optional(),
-});
+}).refine(
+  (data) => data.description || data.descriptionIpfs,
+  { message: "Either 'description' or 'descriptionIpfs' must be provided" },
+);
 
 const SubmitPostBodySchema = z.object({
   posterAddress: z.string(),
@@ -442,12 +446,29 @@ export default async function bountiesRoutes(fastify: FastifyInstance): Promise<
       const body = BuildPostBodySchema.parse(request.body);
 
       try {
+        // If description text is provided but no CID, upload to IPFS first
+        let descriptionIpfs = body.descriptionIpfs;
+        if (!descriptionIpfs && body.description) {
+          descriptionIpfs = await uploadToIPFS(
+            { description: body.description, title: body.title },
+            `bounty-desc-${Date.now()}.json`,
+          );
+          request.log.info({ cid: descriptionIpfs }, "Uploaded bounty description to IPFS");
+        }
+        if (!descriptionIpfs) {
+          return reply.status(400).send({
+            error: "ValidationError",
+            code: "MISSING_DESCRIPTION",
+            message: "Either 'description' or 'descriptionIpfs' must be provided",
+          });
+        }
+
         const { buildPostBountyTx } = await import("../services/txBuilder.js");
         const { encodeBountyDatum } = await import("../services/datumEncoder.js");
 
         const datum = encodeBountyDatum({
           title: body.title,
-          descriptionIpfs: body.descriptionIpfs,
+          descriptionIpfs,
           category: body.category,
           difficulty: body.difficulty,
           rewardLovelace: BigInt(body.rewardLovelace),
