@@ -1,186 +1,300 @@
-const TRANSACTIONS = [
-  {
-    id: "tx-001",
-    type: "Escrow Fund",
-    bounty: "Scrape 500 Product Pages",
-    amount: -120,
-    date: "2026-03-20",
-    hash: "0xabc1...def2",
-    status: "Confirmed",
-  },
-  {
-    id: "tx-002",
-    type: "Bounty Payout",
-    bounty: "Weekly SEO Report",
-    amount: -75,
-    date: "2026-03-22",
-    hash: "0xbcd2...ef34",
-    status: "Confirmed",
-  },
-  {
-    id: "tx-003",
-    type: "Escrow Refund",
-    bounty: "Cancelled Monitoring Task",
-    amount: 50,
-    date: "2026-03-18",
-    hash: "0xcde3...f456",
-    status: "Confirmed",
-  },
-  {
-    id: "tx-004",
-    type: "Deposit",
-    bounty: "—",
-    amount: 500,
-    date: "2026-03-15",
-    hash: "0xdef4...5678",
-    status: "Confirmed",
-  },
-  {
-    id: "tx-005",
-    type: "Escrow Fund",
-    bounty: "Translate 20 Blog Posts",
-    amount: -200,
-    date: "2026-03-24",
-    hash: "0xef56...789a",
-    status: "Pending",
-  },
-];
+"use client";
 
-const SPENDING_POLICIES = [
-  {
-    id: "pol-1",
-    name: "Max per bounty",
-    value: "$500 USDC",
-    enabled: true,
-  },
-  {
-    id: "pol-2",
-    name: "Daily spend limit",
-    value: "$2,000 USDC",
-    enabled: true,
-  },
-  {
-    id: "pol-3",
-    name: "Auto-refund on expiry",
-    value: "Enabled",
-    enabled: true,
-  },
-  {
-    id: "pol-4",
-    name: "Require 2FA for >$1k",
-    value: "Disabled",
-    enabled: false,
-  },
-];
+import { useState } from "react";
+import { useWalletStore } from "@/lib/store";
+import { useWalletBalance, useWalletTransactions, useWalletPolicy } from "@/lib/queries";
+import { useSendFunds } from "@/lib/mutations";
+import { formatAda, truncateAddress, cardanoscanUrl } from "@/lib/utils";
+import { PageHeader } from "@/components/page-header";
+import { AddressDisplay } from "@/components/address-display";
+import { EmptyState } from "@/components/empty-state";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default function WalletDashboardPage() {
-  return (
-    <main className="min-h-screen bg-gray-950 text-white">
-      <div className="mx-auto max-w-5xl px-4 py-12">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Wallet</h1>
-          <p className="mt-1 text-gray-400">
-            Balance, transactions, and spending policies
+  const { connected, address } = useWalletStore();
+
+  if (!connected || !address) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="glass max-w-md rounded-xl p-10 text-center">
+          <h2 className="mb-2 text-xl font-bold text-white">Connect Your Wallet</h2>
+          <p className="mb-6 text-sm text-muted-foreground">
+            Connect a Cardano wallet to view your balance and transactions.
           </p>
-        </div>
-
-        {/* Balance Card */}
-        <div className="mb-8 rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-950/60 to-gray-900 p-8">
-          <p className="mb-1 text-sm text-gray-400">Available Balance</p>
-          <p className="text-5xl font-black text-white">
-            $1,847<span className="text-2xl text-gray-500">.32</span>
-          </p>
-          <p className="mt-1 text-sm text-gray-500">USDC &middot; Polygon</p>
-          <div className="mt-6 flex gap-3">
-            <button className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold hover:bg-indigo-500 transition-colors">
-              Deposit
-            </button>
-            <button className="rounded-lg border border-gray-700 px-5 py-2 text-sm font-semibold hover:border-gray-500 transition-colors">
-              Withdraw
-            </button>
-          </div>
-        </div>
-
-        <div className="grid gap-8 lg:grid-cols-3">
-          {/* Transactions */}
-          <div className="lg:col-span-2">
-            <h2 className="mb-4 text-lg font-semibold">Recent Transactions</h2>
-            <div className="overflow-x-auto rounded-xl border border-gray-800">
-              <table className="w-full text-sm">
-                <thead className="border-b border-gray-800 bg-gray-900">
-                  <tr>
-                    {["Type", "Bounty", "Amount", "Date", "Status"].map(
-                      (col) => (
-                        <th
-                          key={col}
-                          className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-                        >
-                          {col}
-                        </th>
-                      )
-                    )}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-800 bg-gray-950">
-                  {TRANSACTIONS.map((tx) => (
-                    <tr key={tx.id} className="hover:bg-gray-900/50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-white">
-                        {tx.type}
-                      </td>
-                      <td className="max-w-[160px] truncate px-4 py-3 text-gray-400">
-                        {tx.bounty}
-                      </td>
-                      <td
-                        className={`px-4 py-3 font-medium ${tx.amount < 0 ? "text-red-400" : "text-green-400"}`}
-                      >
-                        {tx.amount > 0 ? "+" : ""}${Math.abs(tx.amount)}
-                      </td>
-                      <td className="px-4 py-3 text-gray-500">{tx.date}</td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-xs ${tx.status === "Confirmed" ? "bg-green-500/10 text-green-400" : "bg-yellow-500/10 text-yellow-400"}`}
-                        >
-                          {tx.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Policy Editor */}
-          <div>
-            <h2 className="mb-4 text-lg font-semibold">Spending Policies</h2>
-            <div className="space-y-3 rounded-xl border border-gray-800 bg-gray-900 p-4">
-              {SPENDING_POLICIES.map((policy) => (
-                <div
-                  key={policy.id}
-                  className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 px-3 py-3"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-white">
-                      {policy.name}
-                    </p>
-                    <p className="text-xs text-gray-500">{policy.value}</p>
-                  </div>
-                  <div
-                    className={`h-5 w-9 rounded-full ${policy.enabled ? "bg-indigo-600" : "bg-gray-700"}`}
-                  >
-                    <div
-                      className={`h-4 w-4 translate-y-0.5 rounded-full bg-white transition-transform ${policy.enabled ? "translate-x-4" : "translate-x-0.5"}`}
-                    />
-                  </div>
-                </div>
-              ))}
-              <button className="mt-2 w-full rounded-lg border border-gray-700 py-2 text-sm text-gray-400 hover:border-gray-600 hover:text-white transition-colors">
-                Edit Policies
-              </button>
-            </div>
-          </div>
+          <Button className="btn-primary px-6 py-2.5">Connect Wallet</Button>
         </div>
       </div>
-    </main>
+    );
+  }
+
+  return <WalletContent address={address} />;
+}
+
+function WalletContent({ address }: { address: string }) {
+  const { data: balance, isLoading: loadingBalance } = useWalletBalance(address);
+  const { data: txData, isLoading: loadingTxs } = useWalletTransactions(address);
+  const { data: policy, isLoading: loadingPolicy } = useWalletPolicy(address);
+
+  const transactions = txData?.data ?? [];
+
+  return (
+    <div className="space-y-6">
+      <PageHeader title="Wallet" description="Balance, transactions, and spending policies" />
+
+      {/* Balance Card */}
+      {loadingBalance ? (
+        <Skeleton className="h-40 rounded-xl" />
+      ) : (
+        <div className="glass relative overflow-hidden rounded-xl border-indigo-500/20 p-8">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/10 to-purple-600/5 pointer-events-none" />
+          <div className="relative">
+            <p className="mb-1 text-sm text-muted-foreground">Available Balance</p>
+            <p className="text-4xl font-mono font-black text-gradient-gold">
+              {balance ? formatAda(balance.lovelace) : "0 ₳"}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">Cardano Preprod</p>
+            <div className="mt-6 flex gap-3">
+              <SendDialog address={address} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Token Balances */}
+      {balance && balance.tokens.length > 0 && (
+        <div className="glass rounded-xl p-6">
+          <h2 className="mb-4 text-lg font-semibold text-white">Tokens</h2>
+          <div className="flex flex-wrap gap-2">
+            {balance.tokens.map((token) => (
+              <div
+                key={token.unit}
+                className="flex items-center gap-2 rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-2"
+              >
+                <span className="font-mono text-xs text-muted-foreground">
+                  {truncateAddress(token.unit)}
+                </span>
+                <span className="font-mono text-sm font-bold text-white">
+                  {token.quantity}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Transactions */}
+      <div className="glass rounded-xl p-6">
+        <h2 className="mb-4 text-lg font-semibold text-white">
+          Recent Transactions
+        </h2>
+        {loadingTxs ? (
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-14 rounded-lg" />
+            ))}
+          </div>
+        ) : transactions.length > 0 ? (
+          <Table>
+            <TableHeader>
+              <TableRow className="border-white/[0.08] hover:bg-transparent">
+                <TableHead className="w-12">Type</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+                <TableHead>Counterparty</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Tx Hash</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {transactions.map((tx) => (
+                <TableRow
+                  key={tx.txHash}
+                  className="border-white/[0.06] hover:bg-white/[0.03]"
+                >
+                  <TableCell>
+                    <span
+                      className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm ${
+                        tx.direction === "in"
+                          ? "bg-emerald-500/10 text-emerald-400"
+                          : "bg-red-500/10 text-red-400"
+                      }`}
+                    >
+                      {tx.direction === "in" ? "↓" : "↑"}
+                    </span>
+                  </TableCell>
+                  <TableCell
+                    className={`text-right font-mono ${
+                      tx.direction === "in" ? "text-emerald-400" : "text-red-400"
+                    }`}
+                  >
+                    {tx.direction === "in" ? "+" : "-"}
+                    {formatAda(tx.amountLovelace)}
+                  </TableCell>
+                  <TableCell>
+                    {tx.counterparty ? (
+                      <AddressDisplay address={tx.counterparty} />
+                    ) : (
+                      <span className="text-sm text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {new Date(tx.blockTime).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <a
+                      href={cardanoscanUrl(tx.txHash)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+                    >
+                      {truncateAddress(tx.txHash)}
+                    </a>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <EmptyState title="No transactions" description="Your transaction history will appear here." />
+        )}
+      </div>
+
+      {/* Spending Policy */}
+      <div className="glass rounded-xl p-6">
+        <h2 className="mb-4 text-lg font-semibold text-white">
+          Spending Policy
+        </h2>
+        {loadingPolicy ? (
+          <Skeleton className="h-32 rounded-lg" />
+        ) : policy && (policy.dailyLimitLovelace || policy.perTxLimitLovelace || policy.whitelistedAddresses.length > 0) ? (
+          <div className="space-y-3">
+            {policy.dailyLimitLovelace && (
+              <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/[0.06] px-4 py-3">
+                <span className="text-sm text-muted-foreground">Daily Limit</span>
+                <span className="font-mono text-sm font-bold text-amber-400">
+                  {formatAda(policy.dailyLimitLovelace)}
+                </span>
+              </div>
+            )}
+            {policy.perTxLimitLovelace && (
+              <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/[0.06] px-4 py-3">
+                <span className="text-sm text-muted-foreground">Per-Transaction Limit</span>
+                <span className="font-mono text-sm font-bold text-amber-400">
+                  {formatAda(policy.perTxLimitLovelace)}
+                </span>
+              </div>
+            )}
+            {policy.whitelistedAddresses.length > 0 && (
+              <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] px-4 py-3">
+                <p className="mb-2 text-sm text-muted-foreground">
+                  Whitelisted Addresses
+                </p>
+                <div className="space-y-1">
+                  {policy.whitelistedAddresses.map((addr) => (
+                    <AddressDisplay key={addr} address={addr} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <p className="text-sm text-muted-foreground">No spending policy configured</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Set up spending limits through the AgentWallet SDK.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SendDialog({ address }: { address: string }) {
+  const [toAddress, setToAddress] = useState("");
+  const [amount, setAmount] = useState("");
+  const [open, setOpen] = useState(false);
+  const sendFunds = useSendFunds();
+
+  const handleSend = () => {
+    if (!toAddress || !amount) return;
+    const lovelace = String(Math.floor(parseFloat(amount) * 1_000_000));
+    sendFunds.mutate(
+      { address, toAddress, amountLovelace: lovelace },
+      {
+        onSuccess: () => {
+          setOpen(false);
+          setToAddress("");
+          setAmount("");
+        },
+      }
+    );
+  };
+
+  const feeEstimate = amount ? "~0.17 ₳" : "—";
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="btn-primary px-5 py-2.5">Send</Button>
+      </DialogTrigger>
+      <DialogContent className="glass border-white/[0.08] bg-navy-950 sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-white">Send ADA</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div>
+            <label className="mb-1 block text-sm text-muted-foreground">
+              Recipient Address
+            </label>
+            <Input
+              placeholder="addr_test1..."
+              value={toAddress}
+              onChange={(e) => setToAddress(e.target.value)}
+              className="border-white/[0.08] bg-white/[0.03] font-mono text-sm"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-muted-foreground">
+              Amount (ADA)
+            </label>
+            <Input
+              type="number"
+              placeholder="0.00"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="border-white/[0.08] bg-white/[0.03] font-mono"
+            />
+          </div>
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>Estimated Fee</span>
+            <span className="font-mono">{feeEstimate}</span>
+          </div>
+          <Button
+            onClick={handleSend}
+            disabled={!toAddress || !amount || sendFunds.isPending}
+            className="btn-primary w-full py-2.5"
+          >
+            {sendFunds.isPending ? "Building Tx..." : "Send"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

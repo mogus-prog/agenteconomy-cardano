@@ -1,191 +1,129 @@
-const MY_BOUNTIES = [
-  {
-    id: "1",
-    title: "Scrape & Summarize 500 Product Pages",
-    status: "Active",
-    reward: 120,
-    claimants: 3,
-    deadline: "2026-04-01",
-    spent: 0,
-  },
-  {
-    id: "2",
-    title: "Weekly SEO Report for 10 Domains",
-    status: "Completed",
-    reward: 75,
-    claimants: 1,
-    deadline: "2026-03-22",
-    spent: 75,
-  },
-  {
-    id: "3",
-    title: "Translate 20 Blog Posts to Spanish",
-    status: "Active",
-    reward: 200,
-    claimants: 2,
-    deadline: "2026-04-10",
-    spent: 0,
-  },
-  {
-    id: "4",
-    title: "Audit Smart Contract for Gas Optimizations",
-    status: "Draft",
-    reward: 500,
-    claimants: 0,
-    deadline: "2026-04-15",
-    spent: 0,
-  },
-  {
-    id: "5",
-    title: "Daily Price Feed — 50 Tokens",
-    status: "Completed",
-    reward: 30,
-    claimants: 1,
-    deadline: "2026-03-20",
-    spent: 30,
-  },
-];
+"use client";
 
-// Spending chart: last 6 months
-const SPENDING_DATA = [
-  { month: "Oct", amount: 310 },
-  { month: "Nov", amount: 520 },
-  { month: "Dec", amount: 410 },
-  { month: "Jan", amount: 680 },
-  { month: "Feb", amount: 490 },
-  { month: "Mar", amount: 425 },
-];
-const MAX_SPEND = Math.max(...SPENDING_DATA.map((d) => d.amount));
-
-const STATUS_COLORS: Record<string, string> = {
-  Active: "bg-green-500/10 text-green-400 border-green-500/30",
-  Completed: "bg-gray-500/10 text-gray-400 border-gray-500/30",
-  Draft: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
-};
-
-const totalSpent = MY_BOUNTIES.reduce((s, b) => s + b.spent, 0);
-const activeCount = MY_BOUNTIES.filter((b) => b.status === "Active").length;
-const completedCount = MY_BOUNTIES.filter((b) => b.status === "Completed").length;
+import { useWalletStore } from "@/lib/store";
+import { useBounties } from "@/lib/queries";
+import { formatAda } from "@/lib/utils";
+import { PageHeader } from "@/components/page-header";
+import { StatCard } from "@/components/stat-card";
+import { BountyCard } from "@/components/bounty-card";
+import { EmptyState } from "@/components/empty-state";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PosterDashboardPage() {
-  return (
-    <main className="min-h-screen bg-gray-950 text-white">
-      <div className="mx-auto max-w-6xl px-4 py-12">
-        <div className="mb-8 flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">My Dashboard</h1>
-            <p className="mt-1 text-gray-400">
-              Manage your bounties and track spending
-            </p>
+  const { connected, address } = useWalletStore();
+
+  if (!connected || !address) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="glass max-w-md rounded-xl p-10 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-600/20">
+            <svg className="h-8 w-8 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H15a3 3 0 1 1-6 0H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9m18 0V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v3" />
+            </svg>
           </div>
-          <a
-            href="/bounties/new"
-            className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold hover:bg-indigo-500 transition-colors"
-          >
-            + Post Bounty
-          </a>
-        </div>
-
-        {/* Summary Cards */}
-        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {[
-            { label: "Total Bounties", value: String(MY_BOUNTIES.length) },
-            { label: "Active", value: String(activeCount) },
-            { label: "Completed", value: String(completedCount) },
-            { label: "Total Spent", value: `$${totalSpent} USDC` },
-          ].map((card) => (
-            <div
-              key={card.label}
-              className="rounded-xl border border-gray-800 bg-gray-900 p-4 text-center"
-            >
-              <p className="text-xl font-bold text-indigo-400">{card.value}</p>
-              <p className="text-xs text-gray-500">{card.label}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="grid gap-8 lg:grid-cols-5">
-          {/* My Bounties List */}
-          <div className="lg:col-span-3">
-            <h2 className="mb-4 text-lg font-semibold">My Bounties</h2>
-            <div className="space-y-3">
-              {MY_BOUNTIES.map((bounty) => (
-                <a
-                  key={bounty.id}
-                  href={`/bounties/${bounty.id}`}
-                  className="flex items-center justify-between rounded-xl border border-gray-800 bg-gray-900 px-4 py-4 hover:border-gray-600 transition-colors"
-                >
-                  <div className="min-w-0 flex-1 pr-4">
-                    <div className="mb-1">
-                      <span
-                        className={`rounded border px-2 py-0.5 text-xs ${STATUS_COLORS[bounty.status]}`}
-                      >
-                        {bounty.status}
-                      </span>
-                    </div>
-                    <p className="truncate text-sm font-medium">{bounty.title}</p>
-                    <p className="text-xs text-gray-500">
-                      Deadline: {bounty.deadline} &middot; {bounty.claimants}{" "}
-                      claimant{bounty.claimants !== 1 ? "s" : ""}
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="font-bold text-indigo-400">${bounty.reward}</p>
-                    <p className="text-xs text-gray-500">USDC</p>
-                  </div>
-                </a>
-              ))}
-            </div>
-          </div>
-
-          {/* Spending Analytics */}
-          <div className="lg:col-span-2">
-            <h2 className="mb-4 text-lg font-semibold">Spending (USDC)</h2>
-            <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
-              <div className="flex items-end gap-2" style={{ height: "120px" }}>
-                {SPENDING_DATA.map((d) => (
-                  <div
-                    key={d.month}
-                    className="flex flex-1 flex-col items-center gap-1"
-                  >
-                    <div
-                      className="w-full rounded-t bg-indigo-600/60 hover:bg-indigo-500/80 transition-colors"
-                      style={{
-                        height: `${(d.amount / MAX_SPEND) * 100}px`,
-                      }}
-                    />
-                    <span className="text-xs text-gray-500">{d.month}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 flex justify-between border-t border-gray-800 pt-4 text-sm">
-                <span className="text-gray-500">6-month total</span>
-                <span className="font-bold text-white">
-                  ${SPENDING_DATA.reduce((s, d) => s + d.amount, 0).toLocaleString()} USDC
-                </span>
-              </div>
-            </div>
-
-            {/* Quick Nav */}
-            <div className="mt-4 space-y-2">
-              {[
-                { href: "/dashboard/active", label: "Active Bounties" },
-                { href: "/dashboard/wallet", label: "Wallet & Balance" },
-                { href: "/disputes", label: "Disputes" },
-              ].map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-sm hover:border-gray-600 transition-colors"
-                >
-                  <span>{link.label}</span>
-                  <span className="text-gray-600">&rarr;</span>
-                </a>
-              ))}
-            </div>
-          </div>
+          <h2 className="mb-2 text-xl font-bold text-white">Connect Your Wallet</h2>
+          <p className="mb-6 text-sm text-muted-foreground">
+            Connect a Cardano wallet to manage your bounties and track spending.
+          </p>
+          <Button className="btn-primary px-6 py-2.5">Connect Wallet</Button>
         </div>
       </div>
-    </main>
+    );
+  }
+
+  return <DashboardContent address={address} />;
+}
+
+function DashboardContent({ address }: { address: string }) {
+  const { data, isLoading } = useBounties({ posterAddress: address });
+  const bounties = data?.data ?? [];
+
+  const activeCount = bounties.filter(
+    (b) => b.status === "open" || b.status === "claimed" || b.status === "submitted"
+  ).length;
+  const completedCount = bounties.filter((b) => b.status === "completed").length;
+  const totalSpentLovelace = bounties
+    .filter((b) => b.status === "completed")
+    .reduce((s, b) => s + BigInt(b.rewardLovelace), BigInt(0));
+
+  return (
+    <div className="space-y-6">
+      <PageHeader title="Dashboard" description="Manage your bounties and track spending">
+        <a href="/bounties/new">
+          <Button className="btn-primary px-5 py-2.5">Post New Bounty</Button>
+        </a>
+      </PageHeader>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 rounded-xl" />
+          ))
+        ) : (
+          <>
+            <StatCard label="My Bounties" value={bounties.length} />
+            <StatCard label="Active" value={activeCount} />
+            <StatCard label="Completed" value={completedCount} />
+            <StatCard
+              label="Total Spent"
+              value={formatAda(totalSpentLovelace.toString())}
+            />
+          </>
+        )}
+      </div>
+
+      {/* My Bounties Grid */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-44 rounded-xl" />
+          ))}
+        </div>
+      ) : bounties.length === 0 ? (
+        <EmptyState
+          title="You haven't posted any bounties yet"
+          description="Post your first bounty to get started with the AgentEconomy marketplace."
+          action={
+            <a href="/bounties/new">
+              <Button className="btn-primary px-5 py-2.5">Post a Bounty</Button>
+            </a>
+          }
+        />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {bounties.map((bounty) => (
+            <BountyCard key={bounty.id} bounty={bounty} />
+          ))}
+        </div>
+      )}
+
+      {/* Quick Links */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { href: "/dashboard/wallet", label: "Wallet", desc: "Balance & transactions" },
+          { href: "/dashboard/active", label: "Active Bounties", desc: "Bounties in progress" },
+          { href: "/dashboard/earnings", label: "Earnings", desc: "Track agent earnings" },
+          { href: "/bounties/new", label: "New Bounty", desc: "Post a new task" },
+        ].map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            className="glass group flex items-center justify-between rounded-xl p-5 transition-colors hover:border-white/[0.15]"
+          >
+            <div>
+              <p className="font-semibold text-white group-hover:text-indigo-400 transition-colors">
+                {link.label}
+              </p>
+              <p className="text-xs text-muted-foreground">{link.desc}</p>
+            </div>
+            <span className="text-muted-foreground group-hover:text-indigo-400 transition-colors">
+              &rarr;
+            </span>
+          </a>
+        ))}
+      </div>
+    </div>
   );
 }

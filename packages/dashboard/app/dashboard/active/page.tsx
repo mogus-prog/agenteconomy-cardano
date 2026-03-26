@@ -1,160 +1,199 @@
-const ACTIVE_BOUNTIES = [
-  {
-    id: "1",
-    title: "Scrape & Summarize 500 Product Pages",
-    reward: 120,
-    claimedBy: "0xDead...Beef",
-    agentName: "Apex-7",
-    claimedAt: "2026-03-24T10:00:00Z",
-    deadline: "2026-04-01T23:59:59Z",
-    progress: 72,
-    status: "In Progress",
-  },
-  {
-    id: "3",
-    title: "Translate 20 Blog Posts to Spanish",
-    reward: 200,
-    claimedBy: "0xCafe...F00d",
-    agentName: "Orion-3",
-    claimedAt: "2026-03-25T08:30:00Z",
-    deadline: "2026-04-10T23:59:59Z",
-    progress: 15,
-    status: "In Progress",
-  },
-  {
-    id: "6",
-    title: "Audit Smart Contract Gas Usage",
-    reward: 500,
-    claimedBy: "0x1234...5678",
-    agentName: "NovaByte",
-    claimedAt: "2026-03-23T14:00:00Z",
-    deadline: "2026-03-26T23:59:59Z",
-    progress: 95,
-    status: "Awaiting Verification",
-  },
-];
+"use client";
 
-function getTimeRemaining(deadline: string): string {
-  const now = new Date("2026-03-25T12:00:00Z");
-  const end = new Date(deadline);
-  const diffMs = end.getTime() - now.getTime();
-  if (diffMs <= 0) return "Expired";
-  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-  if (days > 0) return `${days}d ${hours}h`;
-  if (hours > 0) return `${hours}h ${mins}m`;
-  return `${mins}m`;
-}
-
-const STATUS_STYLES: Record<string, string> = {
-  "In Progress": "bg-blue-500/10 text-blue-400 border-blue-500/30",
-  "Awaiting Verification":
-    "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
-};
+import { useWalletStore } from "@/lib/store";
+import { useBounties } from "@/lib/queries";
+import { formatAda } from "@/lib/utils";
+import { PageHeader } from "@/components/page-header";
+import { StatusBadge } from "@/components/status-badge";
+import { CountdownTimer } from "@/components/countdown-timer";
+import { AddressDisplay } from "@/components/address-display";
+import { EmptyState } from "@/components/empty-state";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { Bounty } from "@/lib/types";
 
 export default function ActiveBountiesPage() {
-  return (
-    <main className="min-h-screen bg-gray-950 text-white">
-      <div className="mx-auto max-w-5xl px-4 py-12">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Active Bounties</h1>
-          <p className="mt-1 text-gray-400">
-            {ACTIVE_BOUNTIES.length} bounties currently in progress
+  const { connected, address } = useWalletStore();
+
+  if (!connected || !address) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="glass max-w-md rounded-xl p-10 text-center">
+          <h2 className="mb-2 text-xl font-bold text-white">Connect Your Wallet</h2>
+          <p className="mb-6 text-sm text-muted-foreground">
+            Connect your wallet to see active bounties.
           </p>
-        </div>
-
-        <div className="space-y-6">
-          {ACTIVE_BOUNTIES.map((bounty) => {
-            const timeLeft = getTimeRemaining(bounty.deadline);
-            const isUrgent =
-              timeLeft.includes("h") && !timeLeft.includes("d");
-
-            return (
-              <div
-                key={bounty.id}
-                className="rounded-2xl border border-gray-800 bg-gray-900 p-6"
-              >
-                {/* Header */}
-                <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                      <span
-                        className={`rounded border px-2 py-0.5 text-xs ${STATUS_STYLES[bounty.status]}`}
-                      >
-                        {bounty.status}
-                      </span>
-                      {isUrgent && (
-                        <span className="rounded border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-xs text-red-400">
-                          Urgent
-                        </span>
-                      )}
-                    </div>
-                    <h2 className="text-lg font-semibold">{bounty.title}</h2>
-                    <p className="mt-0.5 text-sm text-gray-500">
-                      Claimed by{" "}
-                      <a
-                        href={`/agents/${bounty.claimedBy}`}
-                        className="text-indigo-400 hover:underline"
-                      >
-                        {bounty.agentName}
-                      </a>{" "}
-                      &middot; {bounty.claimedBy}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-indigo-400">
-                      ${bounty.reward}
-                    </p>
-                    <p className="text-xs text-gray-500">USDC in escrow</p>
-                  </div>
-                </div>
-
-                {/* Progress */}
-                <div className="mb-4">
-                  <div className="mb-1.5 flex justify-between text-xs text-gray-500">
-                    <span>Progress</span>
-                    <span>{bounty.progress}%</span>
-                  </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-gray-800">
-                    <div
-                      className={`h-full rounded-full transition-all ${bounty.progress >= 90 ? "bg-green-500" : "bg-indigo-500"}`}
-                      style={{ width: `${bounty.progress}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Countdown + Actions */}
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`rounded-lg border px-3 py-1.5 text-sm font-mono font-bold ${isUrgent ? "border-red-500/30 bg-red-500/10 text-red-400" : "border-gray-700 bg-gray-800 text-gray-300"}`}
-                    >
-                      {timeLeft} remaining
-                    </div>
-                    <span className="text-xs text-gray-600">
-                      Deadline: {bounty.deadline.split("T")[0]}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    {bounty.status === "Awaiting Verification" && (
-                      <button className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold hover:bg-green-500 transition-colors">
-                        Approve &amp; Release
-                      </button>
-                    )}
-                    <button className="rounded-lg border border-gray-700 px-4 py-2 text-sm hover:border-gray-600 transition-colors">
-                      View Submission
-                    </button>
-                    <button className="rounded-lg border border-red-700/50 px-4 py-2 text-sm text-red-400 hover:border-red-600 transition-colors">
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          <Button className="btn-primary px-6 py-2.5">Connect Wallet</Button>
         </div>
       </div>
-    </main>
+    );
+  }
+
+  return <ActiveContent address={address} />;
+}
+
+function ActiveContent({ address }: { address: string }) {
+  const { data: agentData, isLoading: loadingAgent } = useBounties({
+    agentAddress: address,
+    status: "claimed",
+  });
+  const { data: agentSubmitted, isLoading: loadingSubmitted } = useBounties({
+    agentAddress: address,
+    status: "submitted",
+  });
+  const { data: posterData, isLoading: loadingPoster } = useBounties({
+    posterAddress: address,
+    status: "claimed",
+  });
+  const { data: posterSubmitted, isLoading: loadingPosterSubmitted } = useBounties({
+    posterAddress: address,
+    status: "submitted",
+  });
+
+  const isLoading = loadingAgent || loadingSubmitted || loadingPoster || loadingPosterSubmitted;
+
+  const asAgent = [
+    ...(agentData?.data ?? []),
+    ...(agentSubmitted?.data ?? []),
+  ];
+  const asPoster = [
+    ...(posterData?.data ?? []),
+    ...(posterSubmitted?.data ?? []),
+  ];
+
+  const hasNone = asAgent.length === 0 && asPoster.length === 0;
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Active Bounties"
+        description={`${asAgent.length + asPoster.length} bounties in progress`}
+      />
+
+      {isLoading ? (
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-48 rounded-xl" />
+          ))}
+        </div>
+      ) : hasNone ? (
+        <EmptyState
+          title="No active bounties"
+          description="Browse available bounties to get started."
+          action={
+            <a href="/bounties">
+              <Button className="btn-primary px-5 py-2.5">Browse Bounties</Button>
+            </a>
+          }
+        />
+      ) : (
+        <>
+          {/* As Agent */}
+          {asAgent.length > 0 && (
+            <section>
+              <h2 className="mb-4 text-lg font-semibold text-white">As Agent</h2>
+              <div className="space-y-4">
+                {asAgent.map((bounty) => (
+                  <ActiveBountyCard
+                    key={bounty.id}
+                    bounty={bounty}
+                    role="agent"
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* As Poster */}
+          {asPoster.length > 0 && (
+            <section>
+              <h2 className="mb-4 text-lg font-semibold text-white">As Poster</h2>
+              <div className="space-y-4">
+                {asPoster.map((bounty) => (
+                  <ActiveBountyCard
+                    key={bounty.id}
+                    bounty={bounty}
+                    role="poster"
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function ActiveBountyCard({
+  bounty,
+  role,
+}: {
+  bounty: Bounty;
+  role: "agent" | "poster";
+}) {
+  return (
+    <div className="glass rounded-xl p-6">
+      {/* Header */}
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="mb-1.5 flex flex-wrap items-center gap-2">
+            <StatusBadge status={bounty.status} />
+          </div>
+          <h3 className="text-lg font-semibold text-white">
+            <a
+              href={`/bounties/${bounty.id}`}
+              className="hover:text-indigo-400 transition-colors"
+            >
+              {bounty.title}
+            </a>
+          </h3>
+          <div className="mt-0.5 text-sm text-muted-foreground">
+            {role === "agent" && bounty.posterAddress && (
+              <AddressDisplay address={bounty.posterAddress} label="Posted by" />
+            )}
+            {role === "poster" && bounty.agentAddress && (
+              <AddressDisplay address={bounty.agentAddress} label="Claimed by" />
+            )}
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-2xl font-bold font-mono text-amber-400">
+            {formatAda(bounty.rewardLovelace)}
+          </p>
+          <p className="text-xs text-muted-foreground">in escrow</p>
+        </div>
+      </div>
+
+      {/* Countdown + Actions */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">Deadline:</span>
+          <CountdownTimer deadline={bounty.deadline} />
+        </div>
+        <div className="flex gap-2">
+          {role === "agent" && bounty.status === "claimed" && (
+            <Button className="btn-primary px-4 py-2 text-sm">
+              Submit Work
+            </Button>
+          )}
+          {role === "poster" && bounty.status === "submitted" && (
+            <>
+              <Button className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 text-sm rounded-lg">
+                Approve & Pay
+              </Button>
+              <Button variant="outline" className="border-red-500/30 text-red-400 hover:bg-red-500/10 px-4 py-2 text-sm">
+                Dispute
+              </Button>
+            </>
+          )}
+          <a href={`/bounties/${bounty.id}`}>
+            <Button variant="outline" className="border-white/[0.08] px-4 py-2 text-sm">
+              View Details
+            </Button>
+          </a>
+        </div>
+      </div>
+    </div>
   );
 }

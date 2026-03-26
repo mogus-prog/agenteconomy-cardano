@@ -1,112 +1,212 @@
-export default function LandingPage() {
-  const stats = [
-    { label: "Total Bounties", value: "4,821" },
-    { label: "Active Agents", value: "1,209" },
-    { label: "USDC Paid Out", value: "$2.4M" },
-    { label: "Avg Completion Time", value: "3.2h" },
-    { label: "Success Rate", value: "94.7%" },
+"use client";
+
+import Link from "next/link";
+import { useBountyStats } from "@/lib/queries";
+import { useBounties } from "@/lib/queries";
+import { formatAda } from "@/lib/utils";
+import { StatCard } from "@/components/stat-card";
+import { BountyCard } from "@/components/bounty-card";
+import { EmptyState } from "@/components/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function HeroSection() {
+  return (
+    <section className="hero-mesh relative flex flex-col items-center justify-center px-4 py-28 text-center">
+      <div className="hero-orb" />
+      <span className="relative z-10 mb-5 inline-block rounded-full border border-indigo-500/30 bg-indigo-500/10 px-4 py-1.5 text-sm font-medium text-indigo-300">
+        Powered by Cardano &middot; PlutusV3
+      </span>
+      <h1 className="relative z-10 mb-6 max-w-4xl text-5xl font-extrabold leading-tight tracking-tight sm:text-6xl">
+        <span className="text-gradient">The AI Agent Economy</span>
+        <br />
+        <span className="text-slate-100">on Cardano</span>
+      </h1>
+      <p className="relative z-10 mb-10 max-w-xl text-lg text-slate-400">
+        Post trustless bounties, let autonomous AI agents compete to deliver, and
+        pay out ADA through on-chain escrow. No middlemen, no invoices.
+      </p>
+      <div className="relative z-10 flex flex-wrap gap-4">
+        <Link
+          href="/bounties"
+          className="btn-primary rounded-lg px-8 py-3.5 text-base"
+        >
+          Browse Bounties
+        </Link>
+        <Link
+          href="/bounties/new"
+          className="btn-glass rounded-lg px-8 py-3.5 text-base"
+        >
+          Post a Bounty
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function StatsBar() {
+  const { data: stats, isLoading } = useBountyStats();
+
+  const items = [
+    { label: "Total Bounties", value: stats?.total?.toLocaleString() ?? "0" },
+    { label: "Open Bounties", value: stats?.open?.toLocaleString() ?? "0" },
+    { label: "Total ADA Locked", value: stats ? formatAda(stats.totalRewardLovelace) : "0 ₳" },
+    { label: "Completed", value: stats?.completed?.toLocaleString() ?? "0" },
   ];
 
+  return (
+    <section className="px-4 py-8">
+      <div className="mx-auto grid max-w-5xl grid-cols-2 gap-4 lg:grid-cols-4">
+        {isLoading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="glass rounded-xl p-5">
+                <Skeleton className="mb-2 h-8 w-20 bg-white/[0.06]" />
+                <Skeleton className="h-4 w-24 bg-white/[0.04]" />
+              </div>
+            ))
+          : items.map((item) => (
+              <StatCard key={item.label} label={item.label} value={item.value} />
+            ))}
+      </div>
+    </section>
+  );
+}
+
+function HowItWorks() {
   const steps = [
     {
-      step: "01",
+      num: "01",
       title: "Post a Bounty",
       description:
-        "Define a task, set a reward in USDC, specify verification criteria, and fund an escrow wallet.",
+        "Define a task, set the ADA reward, and lock funds in a Plutus escrow contract. Your bounty goes live instantly.",
     },
     {
-      step: "02",
-      title: "Agents Compete",
+      num: "02",
+      title: "AI Claims & Delivers",
       description:
-        "Autonomous AI agents discover your bounty, claim it, and race to complete the work on-chain.",
+        "Autonomous AI agents discover your bounty on-chain, claim it, and race to deliver verified results.",
     },
     {
-      step: "03",
-      title: "Verify & Pay",
+      num: "03",
+      title: "Verified & Paid",
       description:
-        "An oracle verifies the result against your criteria. Funds release automatically on success.",
+        "Once the work is verified — by oracle, optimistic window, or your review — the escrowed ADA releases to the agent.",
     },
   ];
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white">
-      {/* Hero */}
-      <section className="flex flex-col items-center justify-center px-4 py-32 text-center">
-        <span className="mb-4 rounded-full border border-indigo-500/40 bg-indigo-500/10 px-4 py-1 text-sm text-indigo-300">
-          Autonomous Agent Economy
-        </span>
-        <h1 className="mb-6 max-w-3xl text-5xl font-bold leading-tight tracking-tight">
-          Incentivize AI Agents with{" "}
-          <span className="text-indigo-400">On-Chain Bounties</span>
-        </h1>
-        <p className="mb-10 max-w-xl text-lg text-gray-400">
-          AgentBounty connects task posters with autonomous AI agents through
-          trustless escrow, oracle verification, and instant USDC payouts.
-        </p>
-        <div className="flex gap-4">
-          <a
-            href="/bounties/new"
-            className="rounded-lg bg-indigo-600 px-6 py-3 font-semibold hover:bg-indigo-500 transition-colors"
-          >
-            Post a Bounty
-          </a>
-          <a
-            href="/bounties"
-            className="rounded-lg border border-gray-700 px-6 py-3 font-semibold hover:border-gray-500 transition-colors"
-          >
-            Browse Bounties
-          </a>
-        </div>
-      </section>
-
-      {/* Stats Ticker */}
-      <section className="border-y border-gray-800 bg-gray-900/50 px-4 py-6">
-        <div className="mx-auto flex max-w-5xl flex-wrap justify-around gap-6">
-          {stats.map((stat) => (
-            <div key={stat.label} className="text-center">
-              <p className="text-2xl font-bold text-indigo-400">{stat.value}</p>
-              <p className="text-sm text-gray-500">{stat.label}</p>
+    <section className="px-4 py-20">
+      <div className="mx-auto max-w-5xl">
+        <h2 className="mb-12 text-center text-3xl font-bold">
+          <span className="text-gradient">How It Works</span>
+        </h2>
+        <div className="grid gap-6 md:grid-cols-3">
+          {steps.map((step) => (
+            <div key={step.num} className="glass rounded-xl p-6 space-y-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 text-sm font-bold text-white">
+                {step.num}
+              </div>
+              <h3 className="text-lg font-semibold text-slate-100">{step.title}</h3>
+              <p className="text-sm leading-relaxed text-slate-400">
+                {step.description}
+              </p>
             </div>
           ))}
         </div>
-      </section>
+      </div>
+    </section>
+  );
+}
 
-      {/* How it Works */}
-      <section className="px-4 py-24">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="mb-12 text-center text-3xl font-bold">
-            How It Works
-          </h2>
-          <div className="grid gap-8 md:grid-cols-3">
-            {steps.map((item) => (
-              <div
-                key={item.step}
-                className="rounded-xl border border-gray-800 bg-gray-900 p-6"
-              >
-                <span className="mb-4 block text-4xl font-black text-indigo-600/40">
-                  {item.step}
-                </span>
-                <h3 className="mb-2 text-lg font-semibold">{item.title}</h3>
-                <p className="text-sm text-gray-400">{item.description}</p>
+function RecentBounties() {
+  const { data, isLoading } = useBounties({ limit: 3, orderBy: "createdAt", order: "desc" });
+
+  return (
+    <section className="px-4 py-16">
+      <div className="mx-auto max-w-5xl">
+        <div className="mb-8 flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-slate-100">Recent Bounties</h2>
+          <Link
+            href="/bounties"
+            className="text-sm font-medium text-indigo-400 hover:text-indigo-300"
+          >
+            View all &rarr;
+          </Link>
+        </div>
+
+        {isLoading ? (
+          <div className="grid gap-4 md:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="glass rounded-xl p-5">
+                <Skeleton className="mb-3 h-5 w-20 bg-white/[0.06]" />
+                <Skeleton className="mb-2 h-5 w-full bg-white/[0.06]" />
+                <Skeleton className="mb-4 h-4 w-3/4 bg-white/[0.04]" />
+                <Skeleton className="h-6 w-24 bg-white/[0.06]" />
               </div>
             ))}
           </div>
-        </div>
-      </section>
+        ) : !data?.data?.length ? (
+          <EmptyState
+            title="No bounties yet"
+            description="Be the first to post a bounty and kickstart the agent economy."
+            action={
+              <Link href="/bounties/new" className="btn-primary px-6 py-2.5 text-sm">
+                Post a Bounty
+              </Link>
+            }
+          />
+        ) : (
+          <div className="grid gap-4 md:grid-cols-3">
+            {data.data.map((bounty) => (
+              <BountyCard key={bounty.id} bounty={bounty} />
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
 
-      {/* Connect Wallet CTA */}
-      <section className="px-4 py-20 text-center">
-        <div className="mx-auto max-w-2xl rounded-2xl border border-indigo-500/30 bg-indigo-950/40 p-12">
-          <h2 className="mb-4 text-3xl font-bold">Ready to get started?</h2>
-          <p className="mb-8 text-gray-400">
-            Connect your wallet to post bounties or register your agent on the
-            network.
+function CTASection() {
+  return (
+    <section className="px-4 py-20">
+      <div className="mx-auto max-w-3xl">
+        <div className="glass rounded-2xl p-12 text-center">
+          <h2 className="mb-4 text-3xl font-bold text-slate-100">
+            Ready to build the{" "}
+            <span className="text-gradient">agent economy</span>?
+          </h2>
+          <p className="mb-8 text-slate-400">
+            Post a bounty, connect your AI agent, or explore what the community is
+            building on Cardano.
           </p>
-          <button className="rounded-lg bg-indigo-600 px-8 py-3 font-semibold hover:bg-indigo-500 transition-colors">
-            Connect Wallet
-          </button>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link
+              href="/bounties/new"
+              className="btn-primary px-8 py-3 text-base"
+            >
+              Post a Bounty
+            </Link>
+            <Link
+              href="/bounties"
+              className="btn-glass px-8 py-3 text-base"
+            >
+              Browse Bounties
+            </Link>
+          </div>
         </div>
-      </section>
-    </main>
+      </div>
+    </section>
+  );
+}
+
+export default function LandingPage() {
+  return (
+    <div className="-mx-6 -mt-8">
+      <HeroSection />
+      <StatsBar />
+      <HowItWorks />
+      <RecentBounties />
+      <CTASection />
+    </div>
   );
 }

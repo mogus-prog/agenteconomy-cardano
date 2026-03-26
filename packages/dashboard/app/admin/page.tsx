@@ -1,234 +1,258 @@
-const PROTOCOL_STATS = [
-  { label: "Total Bounties", value: "4,821" },
-  { label: "Active Agents", value: "1,209" },
-  { label: "USDC in Escrow", value: "$184,700" },
-  { label: "Total Paid Out", value: "$2.4M" },
-  { label: "Open Disputes", value: "14" },
-  { label: "Oracle Uptime", value: "99.98%" },
-];
+"use client";
+
+import { useState, useEffect } from "react";
+import { useWalletStore } from "@/lib/store";
+import { useBountyStats } from "@/lib/queries";
+import { config } from "@/lib/config";
+import { formatAda } from "@/lib/utils";
+import { PageHeader } from "@/components/page-header";
+import { StatCard } from "@/components/stat-card";
+import { EmptyState } from "@/components/empty-state";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface HealthStatus {
+  api: "healthy" | "degraded" | "down" | "loading";
+  db: "healthy" | "degraded" | "down" | "loading";
+  redis: "healthy" | "degraded" | "down" | "loading";
+}
+
+const HEALTH_STYLES = {
+  healthy: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+  degraded: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
+  down: "bg-red-500/10 text-red-400 border-red-500/30",
+  loading: "bg-white/[0.04] text-muted-foreground border-white/[0.08]",
+};
 
 const ORACLES = [
   {
-    id: "oracle-1",
-    name: "Primary Oracle — Polygon",
-    address: "0xOracle...0001",
-    status: "Healthy",
+    name: "Primary Oracle — Preprod",
+    address: "addr_test1qz...oracle01",
+    status: "healthy" as const,
     lastPing: "12s ago",
-    verifications: 48201,
+    verifications: 4821,
     successRate: "99.6%",
-    latency: "1.2s",
   },
   {
-    id: "oracle-2",
-    name: "Backup Oracle — Polygon",
-    address: "0xOracle...0002",
-    status: "Healthy",
+    name: "Backup Oracle — Preprod",
+    address: "addr_test1qz...oracle02",
+    status: "healthy" as const,
     lastPing: "14s ago",
-    verifications: 2840,
+    verifications: 284,
     successRate: "99.1%",
-    latency: "1.8s",
   },
   {
-    id: "oracle-3",
-    name: "Testnet Oracle",
-    address: "0xOracle...0099",
-    status: "Degraded",
+    name: "Testnet Oracle (Dev)",
+    address: "addr_test1qz...oracle99",
+    status: "degraded" as const,
     lastPing: "4m ago",
-    verifications: 821,
+    verifications: 82,
     successRate: "91.2%",
-    latency: "5.4s",
   },
 ];
 
-const RECENT_ACTIONS = [
-  {
-    id: "aa-1",
-    time: "2026-03-25 11:42",
-    actor: "Admin",
-    action: "Set max bounty reward to $10,000 USDC",
-    type: "config",
-  },
-  {
-    id: "aa-2",
-    time: "2026-03-25 10:15",
-    actor: "System",
-    action: "Oracle failover triggered: primary latency spike",
-    type: "alert",
-  },
-  {
-    id: "aa-3",
-    time: "2026-03-24 16:00",
-    actor: "Admin",
-    action: "Banned agent 0xBadA...ctoR for fraudulent submission",
-    type: "action",
-  },
-  {
-    id: "aa-4",
-    time: "2026-03-24 09:30",
-    actor: "Admin",
-    action: "Protocol fee updated from 1.5% to 2.0%",
-    type: "config",
-  },
+const ACTIVITY_LOG = [
+  { time: "2026-03-25 11:42", actor: "Admin", action: "Set max bounty reward to 10,000 ADA", type: "config" },
+  { time: "2026-03-25 10:15", actor: "System", action: "Oracle failover triggered: primary latency spike", type: "alert" },
+  { time: "2026-03-24 16:00", actor: "Admin", action: "Banned agent addr_test1...bad for fraudulent submission", type: "action" },
+  { time: "2026-03-24 09:30", actor: "Admin", action: "Protocol fee updated from 1.5% to 2.0%", type: "config" },
+  { time: "2026-03-23 22:10", actor: "System", action: "Dispute #d-003 auto-escalated after 48h timeout", type: "alert" },
 ];
 
-const ORACLE_STATUS_STYLES: Record<string, string> = {
-  Healthy: "bg-green-500/10 text-green-400 border-green-500/30",
-  Degraded: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
-  Down: "bg-red-500/10 text-red-400 border-red-500/30",
-};
-
-const ACTION_TYPE_STYLES: Record<string, string> = {
+const ACTIVITY_STYLES: Record<string, string> = {
   config: "text-blue-400",
   alert: "text-yellow-400",
   action: "text-red-400",
 };
 
 export default function AdminPage() {
-  return (
-    <main className="min-h-screen bg-gray-950 text-white">
-      <div className="mx-auto max-w-6xl px-4 py-12">
-        <div className="mb-2 flex items-center gap-2">
-          <span className="rounded border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-400">
-            Admin
-          </span>
-          <h1 className="text-3xl font-bold">Protocol Admin Panel</h1>
-        </div>
-        <p className="mb-8 text-gray-400">
-          Oracle management, protocol configuration, and network health
-        </p>
+  const { connected, address } = useWalletStore();
+  const { data: stats, isLoading: loadingStats } = useBountyStats();
+  const [health, setHealth] = useState<HealthStatus>({
+    api: "loading",
+    db: "loading",
+    redis: "loading",
+  });
 
-        {/* Protocol Stats */}
-        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          {PROTOCOL_STATS.map((stat) => (
-            <div
-              key={stat.label}
-              className="rounded-xl border border-gray-800 bg-gray-900 p-4 text-center"
-            >
-              <p className="text-lg font-bold text-indigo-400">{stat.value}</p>
-              <p className="text-xs text-gray-500">{stat.label}</p>
+  useEffect(() => {
+    async function checkHealth() {
+      try {
+        const res = await fetch(`${config.apiUrl}/health`);
+        if (res.ok) {
+          setHealth((h) => ({ ...h, api: "healthy" }));
+        } else {
+          setHealth((h) => ({ ...h, api: "degraded" }));
+        }
+      } catch {
+        setHealth((h) => ({ ...h, api: "down" }));
+      }
+
+      try {
+        const res = await fetch(`${config.apiUrl}/ready`);
+        if (res.ok) {
+          const data = await res.json();
+          setHealth((h) => ({
+            ...h,
+            db: data.db ? "healthy" : "down",
+            redis: data.redis ? "healthy" : "down",
+          }));
+        } else {
+          setHealth((h) => ({ ...h, db: "degraded", redis: "degraded" }));
+        }
+      } catch {
+        setHealth((h) => ({ ...h, db: "down", redis: "down" }));
+      }
+    }
+
+    checkHealth();
+  }, []);
+
+  if (!connected || !address) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="glass max-w-md rounded-xl p-10 text-center">
+          <h2 className="mb-2 text-xl font-bold text-white">Connect Wallet</h2>
+          <p className="mb-6 text-sm text-muted-foreground">
+            Connect wallet to access admin panel.
+          </p>
+          <Button className="btn-primary px-6 py-2.5">Connect Wallet</Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader title="Admin Panel" description="Oracle management, protocol stats, and system health">
+        <Badge className="bg-teal/10 text-teal border-teal/30">
+          {config.network}
+        </Badge>
+      </PageHeader>
+
+      {/* Protocol Stats */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {loadingStats ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 rounded-xl" />
+          ))
+        ) : stats ? (
+          <>
+            <StatCard label="Total Bounties" value={stats.total} />
+            <StatCard label="Open" value={stats.open} />
+            <StatCard label="In Progress" value={stats.inProgress} />
+            <StatCard label="Completed" value={stats.completed} />
+            <StatCard label="Disputed" value={stats.disputed} />
+            <StatCard label="ADA Locked" value={formatAda(stats.totalRewardLovelace)} />
+          </>
+        ) : (
+          <EmptyState title="Stats unavailable" className="col-span-full" />
+        )}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Oracle Management */}
+        <div className="lg:col-span-2 space-y-4">
+          <h2 className="text-lg font-semibold text-white">Oracle Management</h2>
+          {ORACLES.map((oracle) => (
+            <div key={oracle.name} className="glass rounded-xl p-5">
+              <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="mb-1 flex items-center gap-2">
+                    <Badge
+                      variant="outline"
+                      className={HEALTH_STYLES[oracle.status]}
+                    >
+                      {oracle.status}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {oracle.lastPing}
+                    </span>
+                  </div>
+                  <h3 className="font-semibold text-white">{oracle.name}</h3>
+                  <p className="font-mono text-xs text-muted-foreground">
+                    {oracle.address}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="border-white/[0.08] text-xs">
+                    Ping
+                  </Button>
+                  <Button variant="outline" size="sm" className="border-yellow-500/30 text-yellow-400 text-xs">
+                    Pause
+                  </Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 border-t border-white/[0.06] pt-3 text-center">
+                <div>
+                  <p className="text-sm font-bold text-white">
+                    {oracle.verifications.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Verifications</p>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">
+                    {oracle.successRate}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Success Rate</p>
+                </div>
+              </div>
             </div>
           ))}
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-3">
-          {/* Oracle Management */}
-          <div className="lg:col-span-2">
-            <h2 className="mb-4 text-lg font-semibold">Oracle Management</h2>
-            <div className="space-y-4">
-              {ORACLES.map((oracle) => (
+        {/* System Health + Activity Log */}
+        <div className="space-y-6">
+          {/* System Health */}
+          <div>
+            <h2 className="mb-4 text-lg font-semibold text-white">System Health</h2>
+            <div className="glass rounded-xl p-4 space-y-3">
+              {[
+                { label: "API Server", status: health.api },
+                { label: "Database (PostgreSQL)", status: health.db },
+                { label: "Cache (Redis)", status: health.redis },
+              ].map((service) => (
                 <div
-                  key={oracle.id}
-                  className="rounded-xl border border-gray-800 bg-gray-900 p-5"
+                  key={service.label}
+                  className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/[0.06] px-4 py-3"
                 >
-                  <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="mb-1 flex items-center gap-2">
-                        <span
-                          className={`rounded border px-2 py-0.5 text-xs ${ORACLE_STATUS_STYLES[oracle.status]}`}
-                        >
-                          {oracle.status}
-                        </span>
-                        <span className="text-xs text-gray-600">
-                          {oracle.lastPing}
-                        </span>
-                      </div>
-                      <h3 className="font-semibold">{oracle.name}</h3>
-                      <p className="font-mono text-xs text-gray-500">
-                        {oracle.address}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button className="rounded border border-gray-700 px-3 py-1 text-xs hover:border-gray-600 transition-colors">
-                        Ping
-                      </button>
-                      <button className="rounded border border-yellow-700/50 px-3 py-1 text-xs text-yellow-400 hover:border-yellow-600 transition-colors">
-                        Pause
-                      </button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3 border-t border-gray-800 pt-3 text-center">
-                    {[
-                      { label: "Verifications", value: oracle.verifications.toLocaleString() },
-                      { label: "Success Rate", value: oracle.successRate },
-                      { label: "Avg Latency", value: oracle.latency },
-                    ].map((metric) => (
-                      <div key={metric.label}>
-                        <p className="text-sm font-bold text-white">
-                          {metric.value}
-                        </p>
-                        <p className="text-xs text-gray-500">{metric.label}</p>
-                      </div>
-                    ))}
-                  </div>
+                  <span className="text-sm text-slate-300">{service.label}</span>
+                  <Badge
+                    variant="outline"
+                    className={HEALTH_STYLES[service.status]}
+                  >
+                    {service.status}
+                  </Badge>
                 </div>
               ))}
-
-              {/* Add Oracle */}
-              <button className="w-full rounded-xl border border-dashed border-gray-700 py-4 text-sm text-gray-500 hover:border-gray-600 hover:text-gray-400 transition-colors">
-                + Register New Oracle
-              </button>
             </div>
           </div>
 
-          {/* Config + Activity */}
-          <div className="space-y-6">
-            {/* Protocol Config */}
-            <div>
-              <h2 className="mb-4 text-lg font-semibold">
-                Protocol Configuration
-              </h2>
-              <div className="space-y-3 rounded-xl border border-gray-800 bg-gray-900 p-4">
-                {[
-                  { label: "Protocol Fee", value: "2.0%" },
-                  { label: "Min Bounty Reward", value: "$5 USDC" },
-                  { label: "Max Bounty Reward", value: "$10,000 USDC" },
-                  { label: "Claim Timeout", value: "72 hours" },
-                  { label: "Dispute Window", value: "48 hours" },
-                ].map((cfg) => (
-                  <div
-                    key={cfg.label}
-                    className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 px-3 py-2.5"
-                  >
-                    <span className="text-sm text-gray-400">{cfg.label}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-white">
-                        {cfg.value}
-                      </span>
-                      <button className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
-                        Edit
-                      </button>
-                    </div>
+          {/* Activity Log */}
+          <div>
+            <h2 className="mb-4 text-lg font-semibold text-white">Activity Log</h2>
+            <div className="glass rounded-xl p-4 space-y-2">
+              {ACTIVITY_LOG.map((entry, i) => (
+                <div key={i} className="rounded-lg bg-white/[0.02] p-3">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span
+                      className={`text-xs font-medium ${ACTIVITY_STYLES[entry.type] ?? "text-muted-foreground"}`}
+                    >
+                      {entry.actor}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {entry.time}
+                    </span>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Activity Log */}
-            <div>
-              <h2 className="mb-4 text-lg font-semibold">Activity Log</h2>
-              <div className="space-y-2 rounded-xl border border-gray-800 bg-gray-900 p-4">
-                {RECENT_ACTIONS.map((action) => (
-                  <div key={action.id} className="rounded-lg bg-gray-950 p-3">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span
-                        className={`text-xs font-medium ${ACTION_TYPE_STYLES[action.type]}`}
-                      >
-                        {action.actor}
-                      </span>
-                      <span className="text-xs text-gray-600">
-                        {action.time}
-                      </span>
-                    </div>
-                    <p className="mt-0.5 text-xs text-gray-400">
-                      {action.action}
-                    </p>
-                  </div>
-                ))}
-              </div>
+                  <p className="mt-0.5 text-xs text-slate-400">
+                    {entry.action}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

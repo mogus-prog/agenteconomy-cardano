@@ -1,176 +1,230 @@
-// Earnings page — relevant for agents, not posters
-// Agent wallet: 0xDead...Beef (Apex-7)
+"use client";
 
-const MONTHLY_EARNINGS = [
-  { month: "Oct", amount: 820 },
-  { month: "Nov", amount: 1100 },
-  { month: "Dec", amount: 940 },
-  { month: "Jan", amount: 1400 },
-  { month: "Feb", amount: 1250 },
-  { month: "Mar", amount: 1830 },
-];
-
-const MAX_EARNING = Math.max(...MONTHLY_EARNINGS.map((d) => d.amount));
-
-const RECENT_PAYOUTS = [
-  {
-    id: "p-001",
-    bounty: "Scrape 500 Product Pages",
-    amount: 120,
-    date: "2026-03-24",
-    poster: "0xA1b2...C3d4",
-    txHash: "0xaaa1...bbb2",
-  },
-  {
-    id: "p-002",
-    bounty: "Weekly SEO Report",
-    amount: 75,
-    date: "2026-03-22",
-    poster: "0xB2c3...D4e5",
-    txHash: "0xbbb2...ccc3",
-  },
-  {
-    id: "p-003",
-    bounty: "Token Price Feed",
-    amount: 30,
-    date: "2026-03-20",
-    poster: "0xC3d4...E5f6",
-    txHash: "0xccc3...ddd4",
-  },
-  {
-    id: "p-004",
-    bounty: "Translate Blog Posts",
-    amount: 200,
-    date: "2026-03-15",
-    poster: "0xD4e5...F6a7",
-    txHash: "0xddd4...eee5",
-  },
-  {
-    id: "p-005",
-    bounty: "Audit Smart Contract",
-    amount: 500,
-    date: "2026-03-10",
-    poster: "0xE5f6...A7b8",
-    txHash: "0xeee5...fff6",
-  },
-];
-
-const totalThisMonth = MONTHLY_EARNINGS[MONTHLY_EARNINGS.length - 1].amount;
-const totalAllTime = MONTHLY_EARNINGS.reduce((s, d) => s + d.amount, 0);
-const avgMonthly = Math.round(totalAllTime / MONTHLY_EARNINGS.length);
+import { useWalletStore } from "@/lib/store";
+import { useAgent, useAgentEarnings, useAgentBounties } from "@/lib/queries";
+import { useRegisterAgent } from "@/lib/mutations";
+import { formatAda, lovelaceToAda, cardanoscanUrl, truncateAddress } from "@/lib/utils";
+import { PageHeader } from "@/components/page-header";
+import { StatCard } from "@/components/stat-card";
+import { EmptyState } from "@/components/empty-state";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default function EarningsPage() {
-  return (
-    <main className="min-h-screen bg-gray-950 text-white">
-      <div className="mx-auto max-w-5xl px-4 py-12">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Earnings</h1>
-          <p className="mt-1 text-gray-400">
-            Your agent earnings from completed bounties
+  const { connected, address } = useWalletStore();
+
+  if (!connected || !address) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="glass max-w-md rounded-xl p-10 text-center">
+          <h2 className="mb-2 text-xl font-bold text-white">Connect Your Wallet</h2>
+          <p className="mb-6 text-sm text-muted-foreground">
+            Connect your wallet to view your earnings.
           </p>
-        </div>
-
-        {/* Summary Cards */}
-        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {[
-            { label: "This Month", value: `$${totalThisMonth.toLocaleString()}` },
-            { label: "6-Month Total", value: `$${totalAllTime.toLocaleString()}` },
-            { label: "Monthly Average", value: `$${avgMonthly.toLocaleString()}` },
-            { label: "Pending Payout", value: "$620" },
-          ].map((card) => (
-            <div
-              key={card.label}
-              className="rounded-xl border border-gray-800 bg-gray-900 p-4 text-center"
-            >
-              <p className="text-xl font-bold text-indigo-400">{card.value}</p>
-              <p className="text-xs text-gray-500">{card.label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Earnings Chart */}
-        <div className="mb-8 rounded-2xl border border-gray-800 bg-gray-900 p-6">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Monthly Earnings (USDC)</h2>
-            <span className="text-xs text-gray-500">Last 6 months</span>
-          </div>
-          <div className="flex items-end gap-3" style={{ height: "160px" }}>
-            {MONTHLY_EARNINGS.map((d) => (
-              <div
-                key={d.month}
-                className="flex flex-1 flex-col items-center gap-2"
-              >
-                <span className="text-xs font-medium text-indigo-400">
-                  ${d.amount}
-                </span>
-                <div
-                  className="w-full rounded-t bg-indigo-600/70 hover:bg-indigo-500 transition-colors"
-                  style={{
-                    height: `${(d.amount / MAX_EARNING) * 120}px`,
-                  }}
-                />
-                <span className="text-xs text-gray-500">{d.month}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Month-over-month */}
-          <div className="mt-4 flex items-center gap-2 border-t border-gray-800 pt-4 text-sm">
-            <span className="text-green-400 font-medium">
-              +46.4% vs last month
-            </span>
-            <span className="text-gray-600">&bull;</span>
-            <span className="text-gray-500">
-              Mar: $1,830 vs Feb: $1,250
-            </span>
-          </div>
-        </div>
-
-        {/* Payout History */}
-        <div>
-          <h2 className="mb-4 text-lg font-semibold">Payout History</h2>
-          <div className="overflow-x-auto rounded-xl border border-gray-800">
-            <table className="w-full text-sm">
-              <thead className="border-b border-gray-800 bg-gray-900">
-                <tr>
-                  {["Bounty", "Amount", "Date", "Poster", "Tx Hash"].map(
-                    (col) => (
-                      <th
-                        key={col}
-                        className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-                      >
-                        {col}
-                      </th>
-                    )
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800 bg-gray-950">
-                {RECENT_PAYOUTS.map((payout) => (
-                  <tr
-                    key={payout.id}
-                    className="hover:bg-gray-900/50 transition-colors"
-                  >
-                    <td className="max-w-[200px] truncate px-4 py-3 font-medium text-white">
-                      {payout.bounty}
-                    </td>
-                    <td className="px-4 py-3 font-bold text-green-400">
-                      +${payout.amount}
-                    </td>
-                    <td className="px-4 py-3 text-gray-500">{payout.date}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-500">
-                      {payout.poster}
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs text-indigo-400">
-                      {payout.txHash}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Button className="btn-primary px-6 py-2.5">Connect Wallet</Button>
         </div>
       </div>
-    </main>
+    );
+  }
+
+  return <EarningsContent address={address} />;
+}
+
+function EarningsContent({ address }: { address: string }) {
+  const { data: agent, isLoading: loadingAgent } = useAgent(address);
+  const { data: earningsData, isLoading: loadingEarnings } = useAgentEarnings(address);
+  const { data: bountiesData, isLoading: loadingBounties } = useAgentBounties(address, {
+    status: "completed",
+  });
+  const registerAgent = useRegisterAgent();
+
+  const buckets = earningsData?.buckets ?? [];
+  const completedBounties = bountiesData?.data ?? [];
+
+  // If no agent found, show registration prompt
+  if (!loadingAgent && !agent) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Earnings" description="Track your agent earnings from completed bounties" />
+        <div className="glass max-w-lg mx-auto rounded-xl p-10 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-600/20">
+            <svg className="h-8 w-8 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+            </svg>
+          </div>
+          <h2 className="mb-2 text-xl font-bold text-white">Register as an Agent</h2>
+          <p className="mb-6 text-sm text-muted-foreground">
+            Register as an agent to start earning ADA from bounties and track your earnings here.
+          </p>
+          <Button
+            className="btn-primary px-6 py-2.5"
+            onClick={() =>
+              registerAgent.mutate({
+                address,
+                displayName: "My Agent",
+              })
+            }
+            disabled={registerAgent.isPending}
+          >
+            {registerAgent.isPending ? "Registering..." : "Register Agent"}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const lifetimeEarned = agent?.totalEarnedLovelace ?? "0";
+  const thisMonth =
+    buckets.length > 0 ? buckets[buckets.length - 1].totalLovelace : "0";
+  const avgPerBounty =
+    (agent?.totalCompleted ?? 0) > 0
+      ? String(
+          Math.floor(
+            Number(BigInt(lifetimeEarned)) / (agent?.totalCompleted ?? 1)
+          )
+        )
+      : "0";
+  const pendingLovelace = completedBounties
+    .filter((b) => !b.completeTxHash)
+    .reduce((s, b) => s + BigInt(b.rewardLovelace), BigInt(0));
+
+  const maxBucket = buckets.length > 0
+    ? Math.max(...buckets.map((b) => lovelaceToAda(b.totalLovelace)), 1)
+    : 1;
+
+  return (
+    <div className="space-y-6">
+      <PageHeader title="Earnings" description="Your agent earnings from completed bounties" />
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {loadingAgent ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 rounded-xl" />
+          ))
+        ) : (
+          <>
+            <StatCard label="Lifetime Earned" value={formatAda(lifetimeEarned)} />
+            <StatCard label="This Month" value={formatAda(thisMonth)} />
+            <StatCard label="Average per Bounty" value={formatAda(avgPerBounty)} />
+            <StatCard label="Pending" value={formatAda(pendingLovelace.toString())} />
+          </>
+        )}
+      </div>
+
+      {/* Earnings Chart */}
+      <div className="glass rounded-xl p-6">
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-white">Monthly Earnings</h2>
+          <span className="text-xs text-muted-foreground">
+            Last {buckets.length} months
+          </span>
+        </div>
+        {loadingEarnings ? (
+          <Skeleton className="h-40 w-full rounded-lg" />
+        ) : buckets.length > 0 ? (
+          <div className="flex items-end gap-3" style={{ height: "160px" }}>
+            {buckets.map((bucket) => {
+              const ada = lovelaceToAda(bucket.totalLovelace);
+              return (
+                <div
+                  key={bucket.period}
+                  className="flex flex-1 flex-col items-center gap-2"
+                >
+                  <span className="text-xs font-medium font-mono text-amber-400">
+                    {formatAda(bucket.totalLovelace)}
+                  </span>
+                  <div
+                    className="w-full rounded-t bg-amber-400/60 hover:bg-amber-400/80 transition-colors"
+                    style={{
+                      height: `${Math.max((ada / maxBucket) * 120, 4)}px`,
+                    }}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {bucket.period}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground text-center py-8">
+            No earnings data yet
+          </p>
+        )}
+      </div>
+
+      {/* Payout History */}
+      <div className="glass rounded-xl p-6">
+        <h2 className="mb-4 text-lg font-semibold text-white">Payout History</h2>
+        {loadingBounties ? (
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-14 rounded-lg" />
+            ))}
+          </div>
+        ) : completedBounties.length > 0 ? (
+          <Table>
+            <TableHeader>
+              <TableRow className="border-white/[0.08] hover:bg-transparent">
+                <TableHead>Bounty</TableHead>
+                <TableHead className="text-right">Reward</TableHead>
+                <TableHead>Completed</TableHead>
+                <TableHead>Tx Hash</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {completedBounties.map((b) => (
+                <TableRow
+                  key={b.id}
+                  className="border-white/[0.06] hover:bg-white/[0.03]"
+                >
+                  <TableCell className="font-medium text-white">
+                    <a
+                      href={`/bounties/${b.id}`}
+                      className="hover:text-indigo-400 transition-colors"
+                    >
+                      {b.title}
+                    </a>
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-emerald-400">
+                    +{formatAda(b.rewardLovelace)}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {b.completedAt
+                      ? new Date(b.completedAt).toLocaleDateString()
+                      : new Date(b.updatedAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    {b.completeTxHash ? (
+                      <a
+                        href={cardanoscanUrl(b.completeTxHash)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-mono text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+                      >
+                        {truncateAddress(b.completeTxHash)}
+                      </a>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Pending</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <EmptyState title="No payouts yet" description="Complete bounties to start earning." />
+        )}
+      </div>
+    </div>
   );
 }
