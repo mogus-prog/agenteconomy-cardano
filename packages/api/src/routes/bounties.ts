@@ -458,6 +458,56 @@ export default async function bountiesRoutes(fastify: FastifyInstance): Promise<
   );
 
   // -------------------------------------------------------------------------
+  // POST /v1/bounties/record — record a bounty that was submitted via wallet
+  // -------------------------------------------------------------------------
+  const RecordBountyBodySchema = z.object({
+    txHash: z.string(),
+    title: z.string(),
+    description: z.string().optional(),
+    category: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    rewardLovelace: z.string(),
+    deadline: z.string(),
+    difficulty: z.string().optional(),
+    verificationType: z.string().optional(),
+    posterAddress: z.string(),
+  });
+
+  fastify.post(
+    "/v1/bounties/record",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const body = RecordBountyBodySchema.parse(request.body);
+
+      await db
+        .insert(bounties)
+        .values({
+          utxoRef: `${body.txHash}#0`,
+          title: body.title,
+          descriptionIpfs: body.description ?? "",
+          category: body.category ?? "general",
+          difficulty: body.difficulty ?? "medium",
+          rewardLovelace: BigInt(body.rewardLovelace),
+          bondLovelace: BigInt(body.rewardLovelace) / 10n,
+          posterAddress: body.posterAddress,
+          deadline: new Date(body.deadline),
+          claimWindowMs: 86_400_000n,
+          disputeWindowMs: 1_800_000n,
+          createdAt: new Date(),
+          verificationType: body.verificationType ?? "manual",
+          status: "open",
+          tags: body.tags ?? [],
+          postTxHash: body.txHash,
+        })
+        .onConflictDoNothing();
+
+      return reply.status(201).send({
+        txHash: body.txHash,
+        status: "recorded",
+      });
+    },
+  );
+
+  // -------------------------------------------------------------------------
   // POST /v1/bounties/submit-post — submit signed tx
   // -------------------------------------------------------------------------
   fastify.post<{ Body: SubmitPostBody }>(

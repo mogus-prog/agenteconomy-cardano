@@ -200,10 +200,36 @@ export default function PostBountyPage() {
       toast.info("Submitting transaction to the blockchain...");
       const assembledTx = assembleSignedTx(buildResult.unsignedTxCbor, witnessSet);
       const txHash = await wallet.submitTx(assembledTx);
+
+      // Step 4: Record bounty in database (fire-and-forget, don't block on failure)
+      try {
+        await fetch("https://api-production-02a1.up.railway.app/v1/bounties/record", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            txHash,
+            title: form.title,
+            description: form.description,
+            category: form.category,
+            tags: form.tags.split(",").map((t: string) => t.trim()).filter(Boolean),
+            rewardLovelace: String(Math.round(parseFloat(form.rewardAda) * 1_000_000)),
+            deadline: new Date(form.deadline).toISOString(),
+            difficulty: form.difficulty.toLowerCase(),
+            verificationType: form.verificationType,
+            posterAddress: address,
+          }),
+        });
+      } catch {
+        // Non-critical — indexer will pick it up from chain eventually
+      }
+
       setSuccessTxHash(txHash);
       toast.success("Bounty posted on-chain!", {
         description: `TX: ${txHash.slice(0, 16)}...`,
       });
+
+      // Invalidate bounty queries so the board refreshes
+      postBounty.reset();
 
       setTimeout(() => {
         router.push("/bounties");
