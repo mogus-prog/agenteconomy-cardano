@@ -265,25 +265,38 @@ export default function BountyDetailPage() {
     if (!address) return;
     setProcessing("approve");
     try {
-      // Try on-chain tx flow first
-      await executeTxFlow(
-        "approve",
-        () => buildApprovePay(params.id, { poster: address }),
-        async () => {},
-        "approve",
-        { posterAddress: address }
-      );
+      // Build on-chain tx
+      toast.info("Building transaction...");
+      const buildResult = await buildApprovePay(params.id, { poster: address });
+
+      if (buildResult.unsignedTxCbor) {
+        // Full on-chain flow
+        toast.info("Please sign the transaction in your wallet...");
+        const wallet = await enableWallet(useWalletStore.getState().walletName ?? "lace");
+        const witnessSet = await wallet.signTx(buildResult.unsignedTxCbor);
+        toast.info("Submitting transaction to the blockchain...");
+        const assembledTx = assembleSignedTx(buildResult.unsignedTxCbor, witnessSet);
+        const txHash = await wallet.submitTx(assembledTx);
+        toast.success("Bounty approved & paid on-chain!", {
+          description: `TX: ${txHash.slice(0, 16)}...`,
+        });
+      }
+      refreshBounty();
     } catch {
-      // If on-chain tx fails (e.g. simulated claim), fall back to DB update
+      // On-chain tx build failed — update DB status directly
       try {
-        toast.info("Updating bounty status...");
-        await fetch(`https://api-production-02a1.up.railway.app/v1/bounties/${params.id}/status`, {
+        toast.info("Recording approval...");
+        const res = await fetch(`https://api-production-02a1.up.railway.app/v1/bounties/${params.id}/status`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status: "completed" }),
         });
-        toast.success("Bounty approved! Payment recorded.");
-        refreshBounty();
+        if (res.ok) {
+          toast.success("Bounty approved! Payment recorded.");
+          refreshBounty();
+        } else {
+          toast.error("Failed to update bounty status");
+        }
       } catch (dbErr) {
         const msg = dbErr instanceof Error ? dbErr.message : "Unknown error";
         toast.error("Failed to update bounty", { description: msg });
@@ -291,7 +304,7 @@ export default function BountyDetailPage() {
     } finally {
       setProcessing(null);
     }
-  }, [address, params.id, executeTxFlow, refreshBounty]);
+  }, [address, params.id, refreshBounty]);
 
   // ── Dispute ──
   const handleDispute = useCallback(() => {
