@@ -145,14 +145,14 @@ export function getDispute(id: string) {
 
 export function buildPostBounty(params: {
   title: string;
-  description: string;
+  descriptionIpfs: string;
   category: string;
   tags: string[];
   rewardLovelace: string;
   deadline: string;
   difficulty: string;
   verificationType: string;
-  poster: string;
+  posterAddress: string;
 }) {
   return apiFetch<BuildTxResponse>("/bounties/build-post", {
     method: "POST",

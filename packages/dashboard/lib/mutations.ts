@@ -27,7 +27,25 @@ export function usePostBounty() {
       difficulty: string;
       verificationType: string;
       poster: string;
-    }) => buildPostBounty(params),
+    }) => {
+      // Map frontend form values to API schema
+      const verificationMap: Record<string, string> = {
+        Optimistic: "auto",
+        HumanReview: "manual",
+        OracleSigned: "oracle",
+      };
+      return buildPostBounty({
+        title: params.title,
+        descriptionIpfs: params.description, // API accepts raw text here, indexer handles IPFS
+        category: params.category.toLowerCase(),
+        tags: params.tags,
+        rewardLovelace: params.rewardLovelace,
+        deadline: params.deadline,
+        difficulty: params.difficulty.toLowerCase(),
+        verificationType: verificationMap[params.verificationType] ?? params.verificationType.toLowerCase(),
+        posterAddress: params.poster,
+      });
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["bounties"] });
       qc.invalidateQueries({ queryKey: ["bountyStats"] });
