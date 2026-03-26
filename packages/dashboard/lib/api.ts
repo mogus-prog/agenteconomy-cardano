@@ -27,7 +27,7 @@ export async function apiFetch<T>(
   path: string,
   options?: FetchOptions
 ): Promise<T> {
-  const url = `${config.apiUrl}${path}`;
+  const url = `${config.apiUrl}/v1${path}`;
   const res = await fetch(url, {
     method: options?.method ?? "GET",
     headers: {
@@ -115,7 +115,7 @@ export function getAgentBadges(address: string) {
 /* ── Wallet ── */
 
 export function getWalletBalance(address: string) {
-  return apiFetch<WalletBalance>(`/wallet/${address}/balance`);
+  return apiFetch<WalletBalance>(`/wallets/${address}/balance`);
 }
 
 export function getWalletTransactions(
@@ -123,12 +123,12 @@ export function getWalletTransactions(
   params?: { limit?: number; offset?: number }
 ) {
   return apiFetch<PaginatedResponse<Transaction>>(
-    `/wallet/${address}/transactions${toQs(params ?? {})}`
+    `/wallets/${address}/transactions${toQs(params ?? {})}`
   );
 }
 
 export function getWalletPolicy(address: string) {
-  return apiFetch<SpendingPolicy>(`/wallet/${address}/policy`);
+  return apiFetch<SpendingPolicy>(`/wallets/${address}/policy`);
 }
 
 /* ── Disputes ── */
@@ -154,14 +154,14 @@ export function buildPostBounty(params: {
   verificationType: string;
   poster: string;
 }) {
-  return apiFetch<BuildTxResponse>("/bounties/build", {
+  return apiFetch<BuildTxResponse>("/bounties/build-post", {
     method: "POST",
     body: params,
   });
 }
 
 export function submitPostBounty(params: { signedTxCbor: string }) {
-  return apiFetch<SubmitTxResponse>("/bounties/submit", {
+  return apiFetch<SubmitTxResponse>("/bounties/submit-post", {
     method: "POST",
     body: params,
   });
@@ -171,7 +171,7 @@ export function buildClaimBounty(
   bountyId: string,
   params: { agent: string }
 ) {
-  return apiFetch<BuildTxResponse>(`/bounties/${bountyId}/claim/build`, {
+  return apiFetch<BuildTxResponse>(`/bounties/${bountyId}/build-claim`, {
     method: "POST",
     body: params,
   });
@@ -181,7 +181,7 @@ export function submitClaimBounty(
   bountyId: string,
   params: { signedTxCbor: string }
 ) {
-  return apiFetch<SubmitTxResponse>(`/bounties/${bountyId}/claim/submit`, {
+  return apiFetch<SubmitTxResponse>(`/bounties/${bountyId}/submit-claim`, {
     method: "POST",
     body: params,
   });
@@ -191,7 +191,7 @@ export function buildSubmitWork(
   bountyId: string,
   params: { agent: string; resultIpfs: string }
 ) {
-  return apiFetch<BuildTxResponse>(`/bounties/${bountyId}/submit-work/build`, {
+  return apiFetch<BuildTxResponse>(`/bounties/${bountyId}/build-submit-work`, {
     method: "POST",
     body: params,
   });
@@ -201,7 +201,7 @@ export function submitWork(
   bountyId: string,
   params: { signedTxCbor: string }
 ) {
-  return apiFetch<SubmitTxResponse>(`/bounties/${bountyId}/submit-work/submit`, {
+  return apiFetch<SubmitTxResponse>(`/bounties/${bountyId}/submit-work`, {
     method: "POST",
     body: params,
   });
@@ -221,7 +221,7 @@ export function buildSend(
   address: string,
   params: { toAddress: string; amountLovelace: string }
 ) {
-  return apiFetch<BuildTxResponse>(`/wallet/${address}/send/build`, {
+  return apiFetch<BuildTxResponse>(`/wallets/${address}/build-send`, {
     method: "POST",
     body: params,
   });
@@ -231,7 +231,7 @@ export function submitSend(
   address: string,
   params: { signedTxCbor: string }
 ) {
-  return apiFetch<SubmitTxResponse>(`/wallet/${address}/send/submit`, {
+  return apiFetch<SubmitTxResponse>(`/wallets/${address}/submit-send`, {
     method: "POST",
     body: params,
   });
