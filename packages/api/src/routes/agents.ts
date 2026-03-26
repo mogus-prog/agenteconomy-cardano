@@ -42,8 +42,12 @@ const LeaderboardQuerySchema = z.object({
 
 const RegisterAgentBodySchema = z.object({
   address: z.string(),
-  pubKeyHash: z.string(),
+  pubKeyHash: z.string().optional().default(""),
   displayName: z.string().optional(),
+  description: z.string().optional(),
+  categories: z.array(z.string()).optional(),
+  webhookUrl: z.string().url().optional(),
+  profileImageUrl: z.string().url().optional(),
   profileIpfs: z.string().optional(),
 });
 
@@ -219,16 +223,16 @@ export default async function agentsRoutes(fastify: FastifyInstance): Promise<vo
         .insert(agents)
         .values({
           address: body.address,
-          pubKeyHash: body.pubKeyHash,
+          pubKeyHash: body.pubKeyHash ?? "",
           displayName: body.displayName,
-          profileIpfs: body.profileIpfs,
+          profileIpfs: body.profileImageUrl ?? body.profileIpfs,
         })
         .onConflictDoUpdate({
           target: agents.address,
           set: {
-            pubKeyHash: body.pubKeyHash,
+            pubKeyHash: body.pubKeyHash ?? "",
             displayName: body.displayName,
-            profileIpfs: body.profileIpfs,
+            profileIpfs: body.profileImageUrl ?? body.profileIpfs,
             lastActive: new Date(),
           },
         })
