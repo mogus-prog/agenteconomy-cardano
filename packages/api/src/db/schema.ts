@@ -74,7 +74,7 @@ export const bounties = pgTable(
 
 export const agents = pgTable("agents", {
   address: text("address").primaryKey(),
-  pubKeyHash: text("pub_key_hash").unique(),
+  pubKeyHash: text("pub_key_hash"),
   reputationUtxoRef: text("reputation_utxo_ref"),
 
   totalCompleted: integer("total_completed").notNull().default(0),
