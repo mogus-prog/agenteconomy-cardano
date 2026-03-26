@@ -181,11 +181,18 @@ export async function buildPostBountyTx(params: {
       { unit: "lovelace", quantity: outputLovelace.toString() },
     ];
 
+    // Fetch poster's UTXOs for coin selection
+    const posterUtxos = await fetchUtxos(posterAddress);
+    if (posterUtxos.length === 0) {
+      throw new ChainError("Poster wallet has no UTXOs. Please fund your wallet first.");
+    }
+
     const txBuilder = createTxBuilder();
 
     txBuilder
       .txOut(scriptAddress, outputValue)
       .txOutInlineDatumValue(datum)
+      .selectUtxosFrom(posterUtxos)
       .changeAddress(posterAddress);
 
     const unsignedTxCbor = await txBuilder.complete();
