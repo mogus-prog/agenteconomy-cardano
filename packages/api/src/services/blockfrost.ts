@@ -75,14 +75,22 @@ export async function getTxInfo(txHash: string): Promise<unknown | null> {
 }
 
 export async function submitTx(txCbor: string): Promise<string> {
-  const resp = await fetchWithRetry(
+  // No retry for tx submit — submitting twice could be dangerous
+  const resp = await fetch(
     `${config.BLOCKFROST_BASE_URL}/tx/submit`,
     {
       method: "POST",
-      headers: { "Content-Type": "application/cbor" },
+      headers: {
+        "Content-Type": "application/cbor",
+        project_id: config.BLOCKFROST_API_KEY,
+      },
       body: Buffer.from(txCbor, "hex"),
     },
   );
+  if (!resp.ok) {
+    const errorBody = await resp.text();
+    throw new Error(`Blockfrost tx/submit error ${resp.status}: ${errorBody}`);
+  }
   const result = (await resp.json()) as string;
   return result;
 }
