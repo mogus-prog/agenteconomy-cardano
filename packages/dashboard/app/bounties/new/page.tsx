@@ -36,6 +36,13 @@ const STEPS = [
   { id: 4, label: "Review & Confirm" },
 ] as const;
 
+const RECURRING_INTERVALS = [
+  { label: "Every hour", value: "3600000" },
+  { label: "Every 6 hours", value: "21600000" },
+  { label: "Daily", value: "86400000" },
+  { label: "Weekly", value: "604800000" },
+] as const;
+
 interface FormData {
   title: string;
   description: string;
@@ -47,6 +54,9 @@ interface FormData {
   verificationType: VerificationType;
   disputeWindowMinutes: string;
   resultSchema: ResultSchema | null;
+  isRecurring: boolean;
+  recurringIntervalMs: string;
+  maxRecurrences: string;
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -204,6 +214,9 @@ export default function PostBountyPage() {
     verificationType: "Optimistic",
     disputeWindowMinutes: "60",
     resultSchema: null,
+    isRecurring: false,
+    recurringIntervalMs: "86400000",
+    maxRecurrences: "",
   });
 
   const applyTemplate = useCallback((template: BountyTemplate | null) => {
@@ -220,6 +233,9 @@ export default function PostBountyPage() {
         verificationType: "Optimistic",
         disputeWindowMinutes: "60",
         resultSchema: null,
+        isRecurring: false,
+        recurringIntervalMs: "86400000",
+        maxRecurrences: "",
       });
       setErrors({});
       return;
@@ -336,6 +352,13 @@ export default function PostBountyPage() {
             verificationType: form.verificationType,
             posterAddress: address,
             ...(form.resultSchema ? { resultSchema: form.resultSchema } : {}),
+            ...(form.isRecurring
+              ? {
+                  isRecurring: true,
+                  recurringIntervalMs: form.recurringIntervalMs,
+                  ...(form.maxRecurrences ? { maxRecurrences: parseInt(form.maxRecurrences) } : {}),
+                }
+              : {}),
           }),
         });
       } catch {
@@ -534,6 +557,65 @@ export default function PostBountyPage() {
                 </SelectContent>
               </Select>
             </div>
+            {/* Recurring bounty toggle */}
+            <div className="space-y-3">
+              <label className="flex cursor-pointer items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={form.isRecurring}
+                  onChange={(e) => update("isRecurring", e.target.checked)}
+                  className="h-4 w-4 rounded border-white/20 bg-white/5 accent-indigo-500"
+                />
+                <div>
+                  <span className="text-sm font-medium text-slate-200">
+                    Recurring bounty
+                  </span>
+                  <p className="text-xs text-muted-foreground">
+                    Automatically repost this bounty after completion
+                  </p>
+                </div>
+              </label>
+
+              {form.isRecurring && (
+                <div className="ml-7 space-y-3 rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-4">
+                  <div>
+                    <label className={labelClass}>Repeat Interval</label>
+                    <Select
+                      value={form.recurringIntervalMs}
+                      onValueChange={(v) => update("recurringIntervalMs", v)}
+                    >
+                      <SelectTrigger className={inputClass("")}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="border-white/[0.1] bg-[#0a1628] text-slate-200">
+                        {RECURRING_INTERVALS.map((interval) => (
+                          <SelectItem key={interval.value} value={interval.value}>
+                            {interval.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className={labelClass}>
+                      Max Recurrences{" "}
+                      <span className="font-normal text-muted-foreground">
+                        (leave blank for unlimited)
+                      </span>
+                    </label>
+                    <Input
+                      type="number"
+                      min="1"
+                      placeholder="Unlimited"
+                      value={form.maxRecurrences}
+                      onChange={(e) => update("maxRecurrences", e.target.value)}
+                      className={inputClass("")}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-amber-300">
               Funds will be locked in a Plutus escrow contract until verification
               completes. Ensure your wallet has sufficient ADA balance.
@@ -632,6 +714,16 @@ export default function PostBountyPage() {
               { label: "Verification", value: form.verificationType },
               ...(form.verificationType === "Optimistic"
                 ? [{ label: "Dispute Window", value: `${form.disputeWindowMinutes} min` }]
+                : []),
+              ...(form.isRecurring
+                ? [
+                    {
+                      label: "Recurring",
+                      value: `${RECURRING_INTERVALS.find((i) => i.value === form.recurringIntervalMs)?.label ?? "Daily"}${
+                        form.maxRecurrences ? ` (max ${form.maxRecurrences})` : " (unlimited)"
+                      }`,
+                    },
+                  ]
                 : []),
               ...(form.tags ? [{ label: "Tags", value: form.tags }] : []),
             ].map((row) => (

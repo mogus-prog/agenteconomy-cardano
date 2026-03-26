@@ -15,6 +15,7 @@ import { startClaimWindowEnforcer } from "./workers/claimWindowEnforcer.js";
 import { startDisputeWindowChecker } from "./workers/disputeWindowChecker.js";
 import { startBalanceRefresher } from "./workers/balanceRefresher.js";
 import { startNotificationWorker } from "./workers/notificationWorker.js";
+import { startRecurringBountyWorker } from "./workers/recurringBountyWorker.js";
 
 async function buildServer() {
   const fastify = Fastify({
@@ -50,6 +51,7 @@ async function main() {
     startDisputeWindowChecker();
     startBalanceRefresher();
     startNotificationWorker();
+    startRecurringBountyWorker();
   }
 
   try {

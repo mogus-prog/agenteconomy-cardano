@@ -363,6 +363,285 @@ export const BOUNTY_TEMPLATES: BountyTemplate[] = [
       },
     },
   },
+  {
+    id: "price-feed-oracle",
+    name: "Price Feed Oracle",
+    category: "DataExtraction",
+    description: "Fetch and aggregate real-time price data from multiple sources",
+    difficulty: "easy",
+    suggestedReward: 10,
+    tags: ["oracle", "price-feed", "defi"],
+    descriptionTemplate:
+      "Fetch the current price of {ASSET} from at least {N} independent sources " +
+      "(e.g., CoinGecko, CoinMarketCap, Binance, Kraken). Return the individual " +
+      "prices and a weighted average. Data must be no older than 5 minutes.",
+    resultSchema: {
+      type: "object",
+      required: ["asset", "sources", "averagePrice", "currency", "fetchedAt"],
+      properties: {
+        asset: {
+          type: "string",
+          description: "The asset whose price was fetched",
+        },
+        sources: {
+          type: "array",
+          description: "Array of sources with name, price, and timestamp for each",
+        },
+        averagePrice: {
+          type: "number",
+          description: "Weighted average price across all sources",
+        },
+        currency: {
+          type: "string",
+          description: "Quote currency (e.g. USD, EUR)",
+        },
+        fetchedAt: {
+          type: "string",
+          description: "ISO timestamp when the data was fetched",
+        },
+      },
+    },
+  },
+  {
+    id: "smart-contract-deployment",
+    name: "Smart Contract Deployment",
+    category: "OnChain",
+    description: "Deploy a compiled smart contract to a Cardano network",
+    difficulty: "hard",
+    suggestedReward: 50,
+    tags: ["deployment", "smart-contract", "cardano"],
+    descriptionTemplate:
+      "Deploy the provided compiled Aiken smart contract to {NETWORK}. Submit the " +
+      "reference script UTXO, verify the script hash matches, and return the on-chain " +
+      "address. Contract CBOR: {CONTRACT_CBOR}",
+    resultSchema: {
+      type: "object",
+      required: ["scriptHash", "scriptAddress", "deployTxHash", "referenceUtxo", "network", "verifiedAt"],
+      properties: {
+        scriptHash: {
+          type: "string",
+          description: "The hash of the deployed script",
+        },
+        scriptAddress: {
+          type: "string",
+          description: "The on-chain address of the deployed contract",
+        },
+        deployTxHash: {
+          type: "string",
+          description: "Transaction hash of the deployment transaction",
+        },
+        referenceUtxo: {
+          type: "string",
+          description: "The reference script UTXO (txHash#index)",
+        },
+        network: {
+          type: "string",
+          description: "The network the contract was deployed to",
+        },
+        verifiedAt: {
+          type: "string",
+          description: "ISO timestamp when the deployment was verified",
+        },
+      },
+    },
+  },
+  {
+    id: "on-chain-analytics",
+    name: "On-Chain Analytics Report",
+    category: "Research",
+    description: "Analyze blockchain wallet or protocol activity and produce insights",
+    difficulty: "medium",
+    suggestedReward: 25,
+    tags: ["analytics", "on-chain", "research"],
+    descriptionTemplate:
+      "Analyze the on-chain activity of {TARGET} on {BLOCKCHAIN} for the past {PERIOD}. " +
+      "Include transaction volume, unique interactions, token holdings changes, and " +
+      "notable patterns. Provide actionable insights.",
+    resultSchema: {
+      type: "object",
+      required: ["target", "blockchain", "period", "transactionCount", "volumeAda", "uniqueAddresses", "topInteractions", "insights", "generatedAt"],
+      properties: {
+        target: {
+          type: "string",
+          description: "The wallet address or protocol analyzed",
+        },
+        blockchain: {
+          type: "string",
+          description: "The blockchain network analyzed",
+        },
+        period: {
+          type: "string",
+          description: "The time period covered by the analysis",
+        },
+        transactionCount: {
+          type: "number",
+          description: "Total number of transactions in the period",
+        },
+        volumeAda: {
+          type: "number",
+          description: "Total transaction volume in ADA",
+        },
+        uniqueAddresses: {
+          type: "number",
+          description: "Number of unique addresses interacted with",
+        },
+        topInteractions: {
+          type: "array",
+          description: "Top interactions by volume or frequency",
+        },
+        insights: {
+          type: "array",
+          description: "Actionable insights derived from the analysis",
+        },
+        generatedAt: {
+          type: "string",
+          description: "ISO timestamp when the report was generated",
+        },
+      },
+    },
+  },
+  {
+    id: "security-vulnerability-scan",
+    name: "Security Vulnerability Scan",
+    category: "CodeGen",
+    description: "Scan a codebase or smart contract for security vulnerabilities",
+    difficulty: "hard",
+    suggestedReward: 75,
+    tags: ["security", "audit", "vulnerability"],
+    descriptionTemplate:
+      "Perform a comprehensive security scan of the repository at {REPO_URL}. " +
+      "Check for: common vulnerabilities (injection, XSS, CSRF), dependency " +
+      "vulnerabilities, secret leaks, and smart contract specific issues if " +
+      "applicable. Classify findings by severity.",
+    resultSchema: {
+      type: "object",
+      required: ["repositoryUrl", "scanDate", "findings", "criticalCount", "highCount", "mediumCount", "lowCount", "overallRiskScore"],
+      properties: {
+        repositoryUrl: {
+          type: "string",
+          description: "URL of the scanned repository",
+        },
+        scanDate: {
+          type: "string",
+          description: "ISO date when the scan was performed",
+        },
+        findings: {
+          type: "array",
+          description: "Array of findings with severity, type, location, description, and recommendation",
+        },
+        criticalCount: {
+          type: "number",
+          description: "Number of critical severity findings",
+        },
+        highCount: {
+          type: "number",
+          description: "Number of high severity findings",
+        },
+        mediumCount: {
+          type: "number",
+          description: "Number of medium severity findings",
+        },
+        lowCount: {
+          type: "number",
+          description: "Number of low severity findings",
+        },
+        overallRiskScore: {
+          type: "number",
+          description: "Overall risk score (0-100, lower is better)",
+        },
+      },
+    },
+  },
+  {
+    id: "api-health-monitor",
+    name: "API Health Monitor",
+    category: "DataExtraction",
+    description: "Monitor API endpoints and report uptime, latency, and errors",
+    difficulty: "easy",
+    suggestedReward: 5,
+    tags: ["monitoring", "uptime", "api"],
+    descriptionTemplate:
+      "Monitor the following API endpoints every {INTERVAL} for {DURATION}: " +
+      "{ENDPOINTS}. Record response time, status code, and any errors. Alert if " +
+      "response time exceeds {THRESHOLD_MS}ms or status is non-2xx.",
+    resultSchema: {
+      type: "object",
+      required: ["endpoints", "monitoringPeriod", "totalChecks", "overallUptime"],
+      properties: {
+        endpoints: {
+          type: "array",
+          description: "Array of endpoint results with url, checks, avgResponseMs, maxResponseMs, uptime, and errors",
+        },
+        monitoringPeriod: {
+          type: "string",
+          description: "The total monitoring duration",
+        },
+        totalChecks: {
+          type: "number",
+          description: "Total number of health checks performed",
+        },
+        overallUptime: {
+          type: "number",
+          description: "Overall uptime percentage across all endpoints",
+        },
+      },
+    },
+  },
+  {
+    id: "dao-proposal-analysis",
+    name: "DAO Proposal Analysis",
+    category: "Research",
+    description: "Summarize and analyze a governance proposal with recommendations",
+    difficulty: "medium",
+    suggestedReward: 15,
+    tags: ["dao", "governance", "analysis"],
+    descriptionTemplate:
+      "Analyze the governance proposal at {PROPOSAL_URL}. Provide: executive summary, " +
+      "key changes proposed, potential impacts (positive and negative), comparable " +
+      "precedents from other DAOs, and a recommended vote with reasoning.",
+    resultSchema: {
+      type: "object",
+      required: ["proposalUrl", "title", "executiveSummary", "keyChanges", "impacts", "precedents", "recommendedVote", "reasoning", "analyzedAt"],
+      properties: {
+        proposalUrl: {
+          type: "string",
+          description: "URL of the governance proposal analyzed",
+        },
+        title: {
+          type: "string",
+          description: "Title of the governance proposal",
+        },
+        executiveSummary: {
+          type: "string",
+          description: "Brief executive summary of the proposal",
+        },
+        keyChanges: {
+          type: "array",
+          description: "List of key changes proposed",
+        },
+        impacts: {
+          type: "object",
+          description: "Object with positive and negative impact arrays",
+        },
+        precedents: {
+          type: "array",
+          description: "Comparable precedents from other DAOs",
+        },
+        recommendedVote: {
+          type: "string",
+          description: "Recommended vote (for/against/abstain)",
+        },
+        reasoning: {
+          type: "string",
+          description: "Reasoning behind the vote recommendation",
+        },
+        analyzedAt: {
+          type: "string",
+          description: "ISO timestamp when the analysis was completed",
+        },
+      },
+    },
+  },
 ];
 
 /** Look up a template by its id */

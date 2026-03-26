@@ -55,6 +55,13 @@ export const bounties = pgTable(
     claimTxHash: text("claim_tx_hash"),
     submitTxHash: text("submit_tx_hash"),
     completeTxHash: text("complete_tx_hash"),
+
+    // Recurring bounty fields
+    isRecurring: boolean("is_recurring").default(false),
+    recurringIntervalMs: bigint("recurring_interval_ms", { mode: "bigint" }),
+    recurringCount: integer("recurring_count").default(0),
+    maxRecurrences: integer("max_recurrences"),
+    parentBountyId: uuid("parent_bounty_id"),
   },
   (table) => [
     index("idx_bounties_status").on(table.status),

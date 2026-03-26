@@ -57,6 +57,12 @@ export interface Bounty {
   completeTxHash?: string;
   createdAt: string;
   updatedAt: string;
+  // Recurring bounty fields
+  isRecurring?: boolean;
+  recurringIntervalMs?: string;
+  recurringCount?: number;
+  maxRecurrences?: number | null;
+  parentBountyId?: string;
 }
 
 export interface BountyFilters {
