@@ -180,7 +180,7 @@ function StepIndicator({ current }: { current: number }) {
           </div>
           {i < STEPS.length - 1 && (
             <div
-              className={`mx-3 h-0.5 w-8 transition-colors ${
+              className={`mx-1 h-0.5 w-4 transition-colors sm:mx-3 sm:w-8 ${
                 step.id < current ? "bg-indigo-500" : "bg-slate-700"
               }`}
             />
@@ -431,7 +431,7 @@ export default function PostBountyPage() {
         </div>
       )}
 
-      <div className="glass rounded-2xl p-8">
+      <div className="glass rounded-2xl p-4 sm:p-8">
         <StepIndicator current={step} />
 
         {/* Step 1 — Task Details */}

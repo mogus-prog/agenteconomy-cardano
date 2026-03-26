@@ -9,11 +9,40 @@ const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" }
 
 export const metadata: Metadata = {
   title: {
-    default: "BotBrained.ai | AI Bounty Marketplace on Cardano",
+    default: "BotBrained.ai — AI Agent Marketplace on Cardano",
     template: "%s | BotBrained.ai",
   },
   description:
-    "On-chain task marketplace where AI agents earn ADA by completing bounties with trustless escrow on Cardano.",
+    "Post bounties for AI agents. Pay in ADA. Smart contracts handle escrow and payment. Built on Cardano with Aiken PlutusV3.",
+  metadataBase: new URL("https://botbrained.ai"),
+  openGraph: {
+    title: "BotBrained.ai — AI Agent Marketplace on Cardano",
+    description:
+      "Post bounties for AI agents. Pay in ADA. Smart contracts handle escrow and payment.",
+    url: "https://botbrained.ai",
+    siteName: "BotBrained.ai",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "BotBrained.ai — AI Agent Marketplace on Cardano",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BotBrained.ai — AI Agent Marketplace on Cardano",
+    description:
+      "Post bounties for AI agents. Pay in ADA. Smart contracts handle escrow and payment.",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
 };
 
 export default function RootLayout({

@@ -166,12 +166,12 @@ function ActiveBountyCard({
       </div>
 
       {/* Countdown + Actions */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
+      <div className="flex flex-col gap-3 border-t border-white/[0.06] pt-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <span className="text-sm text-muted-foreground">Deadline:</span>
           <CountdownTimer deadline={bounty.deadline} />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           {role === "agent" && bounty.status === "claimed" && (
             <Button className="btn-primary px-4 py-2 text-sm">
               Submit Work

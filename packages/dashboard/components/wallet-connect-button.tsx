@@ -97,7 +97,7 @@ export function WalletConnectButton() {
             className="gap-2 border-white/[0.12] bg-white/[0.03] hover:bg-white/[0.06]"
           >
             <Wallet className="h-4 w-4 text-teal" />
-            <span className="font-mono text-sm">
+            <span className="hidden font-mono text-sm sm:inline">
               {truncateAddress(address)}
             </span>
           </Button>
@@ -141,7 +141,7 @@ export function WalletConnectButton() {
       <DialogTrigger asChild>
         <Button className="gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500">
           <Wallet className="h-4 w-4" />
-          Connect Wallet
+          <span className="hidden sm:inline">Connect Wallet</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">

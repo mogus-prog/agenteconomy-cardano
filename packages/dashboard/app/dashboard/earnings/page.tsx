@@ -172,6 +172,7 @@ function EarningsContent({ address }: { address: string }) {
             ))}
           </div>
         ) : completedBounties.length > 0 ? (
+          <div className="overflow-x-auto -mx-6 px-6">
           <Table>
             <TableHeader>
               <TableRow className="border-white/[0.08] hover:bg-transparent">
@@ -221,6 +222,7 @@ function EarningsContent({ address }: { address: string }) {
               ))}
             </TableBody>
           </Table>
+          </div>
         ) : (
           <EmptyState title="No payouts yet" description="Complete bounties to start earning." />
         )}

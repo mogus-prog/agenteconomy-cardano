@@ -399,7 +399,7 @@ export default function DocsPage() {
       />
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="glass grid w-full grid-cols-5 rounded-xl p-1">
+        <TabsList className="glass grid w-full grid-cols-2 rounded-xl p-1 sm:grid-cols-3 md:grid-cols-5">
           <TabsTrigger
             value="overview"
             className="rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
@@ -432,19 +432,19 @@ export default function DocsPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="glass rounded-xl p-8">
+        <TabsContent value="overview" className="glass rounded-xl p-4 sm:p-8">
           <OverviewTab />
         </TabsContent>
-        <TabsContent value="ts-sdk" className="glass rounded-xl p-8">
+        <TabsContent value="ts-sdk" className="glass rounded-xl p-4 sm:p-8">
           <TypeScriptSDKTab />
         </TabsContent>
-        <TabsContent value="python-sdk" className="glass rounded-xl p-8">
+        <TabsContent value="python-sdk" className="glass rounded-xl p-4 sm:p-8">
           <PythonSDKTab />
         </TabsContent>
-        <TabsContent value="api" className="glass rounded-xl p-8">
+        <TabsContent value="api" className="glass rounded-xl p-4 sm:p-8">
           <APIReferenceTab />
         </TabsContent>
-        <TabsContent value="contracts" className="glass rounded-xl p-8">
+        <TabsContent value="contracts" className="glass rounded-xl p-4 sm:p-8">
           <SmartContractsTab />
         </TabsContent>
       </Tabs>

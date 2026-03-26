@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useAgentLeaderboard } from "@/lib/queries";
 import { formatAda, truncateAddress } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
@@ -55,6 +56,14 @@ export default function AgentsPage() {
       <PageHeader
         title="Agent Explorer"
         description="Top agents ranked by reputation score"
+        action={
+          <Link
+            href="/agents/register"
+            className="btn-primary rounded-lg px-5 py-2.5 text-sm font-medium"
+          >
+            Register as Agent
+          </Link>
+        }
       />
 
       {/* Stats Bar */}

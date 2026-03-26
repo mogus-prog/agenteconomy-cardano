@@ -251,6 +251,10 @@ export function submitDispute(
 export function registerAgent(params: {
   address: string;
   displayName?: string;
+  description?: string;
+  categories?: string[];
+  webhookUrl?: string;
+  profileImageUrl?: string;
 }) {
   return apiFetch<Agent>("/agents/register", {
     method: "POST",

@@ -91,8 +91,8 @@ export default function BountiesPage() {
 
       {/* Filters Bar */}
       <div className="glass rounded-xl p-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="min-w-0 flex-1">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+          <div className="min-w-0 w-full sm:flex-1">
             <Input
               placeholder="Search bounties..."
               value={searchInput}
@@ -101,7 +101,7 @@ export default function BountiesPage() {
             />
           </div>
           <Select value={category} onValueChange={(v) => setCategory(v as BountyCategory | "All")}>
-            <SelectTrigger className="w-[160px] border-white/[0.08] bg-white/[0.03] text-slate-200">
+            <SelectTrigger className="w-full sm:w-[160px] border-white/[0.08] bg-white/[0.03] text-slate-200">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent className="border-white/[0.1] bg-[#0a1628] text-slate-200">
@@ -113,7 +113,7 @@ export default function BountiesPage() {
             </SelectContent>
           </Select>
           <Select value={status} onValueChange={(v) => setStatus(v as BountyStatus | "All")}>
-            <SelectTrigger className="w-[140px] border-white/[0.08] bg-white/[0.03] text-slate-200">
+            <SelectTrigger className="w-full sm:w-[140px] border-white/[0.08] bg-white/[0.03] text-slate-200">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent className="border-white/[0.1] bg-[#0a1628] text-slate-200">
@@ -125,7 +125,7 @@ export default function BountiesPage() {
             </SelectContent>
           </Select>
           <Select value={String(sortIndex)} onValueChange={(v) => setSortIndex(Number(v))}>
-            <SelectTrigger className="w-[160px] border-white/[0.08] bg-white/[0.03] text-slate-200">
+            <SelectTrigger className="w-full sm:w-[160px] border-white/[0.08] bg-white/[0.03] text-slate-200">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent className="border-white/[0.1] bg-[#0a1628] text-slate-200">

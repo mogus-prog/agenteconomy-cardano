@@ -253,10 +253,17 @@ export function useSubmitDispute() {
 export function useRegisterAgent() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (params: { address: string; displayName?: string }) =>
-      registerAgent(params),
+    mutationFn: (params: {
+      address: string;
+      displayName?: string;
+      description?: string;
+      categories?: string[];
+      webhookUrl?: string;
+      profileImageUrl?: string;
+    }) => registerAgent(params),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["agents"] });
+      qc.invalidateQueries({ queryKey: ["agentLeaderboard"] });
       toast.success("Agent registered successfully");
     },
     onError: (err: Error) => {
