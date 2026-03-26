@@ -22,6 +22,7 @@ async function buildServer() {
     logger: {
       level: config.NODE_ENV === "production" ? "info" : "debug",
     },
+    maxParamLength: 200, // Cardano addresses are ~108 chars
   });
 
   // Plugins
