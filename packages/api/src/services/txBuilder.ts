@@ -57,11 +57,19 @@ function loadScriptCbor(validatorTitle: string): string {
   const cached = _scriptCborCache.get(validatorTitle);
   if (cached) return cached;
 
-  // Resolve relative to this file: src/services/ -> ../../contracts/plutus.json
-  const blueprintPath = resolve(
-    import.meta.dirname ?? new URL(".", import.meta.url).pathname,
-    "../../../contracts/plutus.json",
-  );
+  // Try multiple paths: monorepo layout or Docker production layout
+  const baseDir = import.meta.dirname ?? new URL(".", import.meta.url).pathname;
+  const candidates = [
+    resolve(baseDir, "../../../contracts/plutus.json"),  // monorepo: src/services/ -> contracts/
+    resolve(baseDir, "../../plutus.json"),                // Docker: dist/services/ -> plutus.json
+    resolve(process.cwd(), "plutus.json"),                // cwd fallback
+  ];
+  const blueprintPath = candidates.find((p) => {
+    try { readFileSync(p); return true; } catch { return false; }
+  });
+  if (!blueprintPath) {
+    throw new ChainError("plutus.json not found in any expected location");
+  }
   const blueprint: PlutusBlueprint = JSON.parse(
     readFileSync(blueprintPath, "utf-8"),
   );
