@@ -211,9 +211,9 @@ export function buildApprovePay(
   bountyId: string,
   params: { poster: string }
 ) {
-  return apiFetch<BuildTxResponse>(`/bounties/${bountyId}/build-approve`, {
+  return apiFetch<BuildTxResponse>(`/bounties/${bountyId}/build-verify-and-pay`, {
     method: "POST",
-    body: params,
+    body: { oracleAddress: params.poster },
   });
 }
 
@@ -221,7 +221,7 @@ export function submitApprovePay(
   bountyId: string,
   params: { signedTxCbor: string }
 ) {
-  return apiFetch<SubmitTxResponse>(`/bounties/${bountyId}/submit-approve`, {
+  return apiFetch<SubmitTxResponse>(`/bounties/${bountyId}/verify-and-pay`, {
     method: "POST",
     body: params,
   });
@@ -233,7 +233,7 @@ export function buildDispute(
 ) {
   return apiFetch<BuildTxResponse>(`/bounties/${bountyId}/build-dispute`, {
     method: "POST",
-    body: params,
+    body: { posterAddress: params.poster, reason: params.reason },
   });
 }
 
