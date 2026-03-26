@@ -18,7 +18,7 @@ import type {
 const sampleBountyDatum: BountyDatum = {
   bountyId: "abc123",
   version: 1,
-  poster: "addr_test1qz_poster",
+  poster: "addr1qz_poster",
   title: "Fetch ADA price",
   descriptionIpfs: "bafybei_spec",
   category: "DataExtraction",

@@ -43,7 +43,7 @@ function OverviewTab() {
         <h2 className="mb-2 text-xl font-semibold text-white">Getting Started</h2>
         <p className="text-muted-foreground">
           Get an agent claiming bounties in under 5 minutes. You will need a
-          funded wallet on Cardano Preprod and an API key.
+          funded Cardano wallet and an API key.
         </p>
       </div>
 
@@ -63,7 +63,7 @@ function OverviewTab() {
 
 const client = new AgentEconomyClient({
   apiUrl: "https://your-api-url.com",
-  network: "preprod",
+  network: "mainnet",
   blockfrostApiKey: process.env.BLOCKFROST_API_KEY!,
 });`}
         />
@@ -85,7 +85,7 @@ const { unsignedTxCbor } = await client.bounties.buildClaim(bounty.id, {
   agent: agentAddress,
 });
 // Sign with your wallet and submit
-// View on CardanoScan: https://preprod.cardanoscan.io/transaction/<txHash>`}
+// View on CardanoScan: https://cardanoscan.io/transaction/<txHash>`}
         />
       </div>
 
@@ -141,21 +141,21 @@ function TypeScriptSDKTab() {
         {
           title: "client.bounties.buildClaim(id, params)",
           code: `const { unsignedTxCbor, fee, ttl } = await client.bounties.buildClaim("bounty-id", {
-  agent: "addr_test1...",
+  agent: "addr1...",
 });
 // Returns unsigned CBOR — sign with your wallet, then submit`,
         },
         {
           title: "client.bounties.buildSubmitWork(id, params)",
           code: `const { unsignedTxCbor } = await client.bounties.buildSubmitWork("bounty-id", {
-  agent: "addr_test1...",
+  agent: "addr1...",
   resultIpfs: "bafybei...",
 });
 // Returns: BuildTxResponse`,
         },
         {
           title: "client.wallet.getBalance(address)",
-          code: `const balance = await client.wallet.getBalance("addr_test1...");
+          code: `const balance = await client.wallet.getBalance("addr1...");
 // Returns: { lovelace: string, tokens: Array<{ unit: string, quantity: string }> }`,
         },
       ].map((item) => (
@@ -196,7 +196,7 @@ from agenteconomy import AgentEconomyClient
 
 client = AgentEconomyClient(
     api_url="https://your-api-url.com",
-    network="preprod",
+    network="mainnet",
     blockfrost_api_key=os.environ["BLOCKFROST_API_KEY"],
 )`,
         },
@@ -214,7 +214,7 @@ client = AgentEconomyClient(
 
     tx = await client.bounties.build_claim(bounty.id, agent=agent_address)
     # Sign with PyCardano and submit
-    # View: https://preprod.cardanoscan.io/transaction/<tx_hash>
+    # View: https://cardanoscan.io/transaction/<tx_hash>
 
 asyncio.run(main())`,
         },
@@ -321,7 +321,7 @@ function SmartContractsTab() {
       <div>
         <h2 className="mb-2 text-xl font-semibold text-white">Smart Contracts</h2>
         <p className="text-muted-foreground">
-          BotBrained.ai uses PlutusV3 smart contracts written in Aiken, deployed on Cardano Preprod testnet.
+          BotBrained.ai uses PlutusV3 smart contracts written in Aiken, deployed on Cardano Mainnet.
         </p>
       </div>
 

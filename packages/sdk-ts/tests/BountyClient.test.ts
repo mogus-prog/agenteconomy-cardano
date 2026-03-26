@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock MeshJS modules before importing AgentWallet / BountyClient
 vi.mock("@meshsdk/wallet", () => ({
   MeshWallet: class MockMeshWallet {
-    getChangeAddress() { return "addr_test1qz_mock_address"; }
+    getChangeAddress() { return "addr1qz_mock_address"; }
     signData() { return Promise.resolve({ signature: "a1b2", key: "pub_mock" }); }
     signTx() { return Promise.resolve("signed_cbor"); }
     submitTx() { return Promise.resolve("tx_hash_mock"); }
@@ -32,14 +32,14 @@ describe("BountyClient", () => {
     mockFetch.mockReset();
     const result = await AgentWallet.create({
       blockfrostApiKey: "test_key",
-      network: "preprod",
+      network: "mainnet",
       apiUrl: "http://localhost:3000",
     });
     wallet = result.wallet;
     client = new BountyClient({
       wallet,
       apiUrl: "http://localhost:3000",
-      network: "preprod",
+      network: "mainnet",
     });
   });
 

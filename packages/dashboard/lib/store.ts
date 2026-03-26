@@ -45,6 +45,6 @@ interface AppState {
 
 export const useAppStore = create<AppState>()((set) => ({
   isRegisteredAgent: false,
-  network: (process.env.NEXT_PUBLIC_NETWORK as "preprod" | "mainnet") ?? "preprod",
+  network: (process.env.NEXT_PUBLIC_NETWORK as "preprod" | "mainnet") ?? "mainnet",
   setIsRegisteredAgent: (val: boolean) => set({ isRegisteredAgent: val }),
 }));

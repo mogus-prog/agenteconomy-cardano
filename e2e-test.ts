@@ -1,5 +1,5 @@
 /**
- * BotBrained.ai E2E Validation Test on Cardano Preprod
+ * BotBrained.ai E2E Validation Test on Cardano Mainnet
  *
  * This script runs the 7-step E2E test from the spec:
  * 1. Create a new agent wallet via SDK
@@ -14,9 +14,9 @@
 import { AgentWallet } from "./packages/sdk-ts/src/AgentWallet.js";
 import { BountyClient } from "./packages/sdk-ts/src/BountyClient.js";
 
-const BLOCKFROST_API_KEY = process.env.BLOCKFROST_API_KEY ?? "preprodvB6tGg3rWzUnDymcjh9q7f5ewdQ3bzLN";
+const BLOCKFROST_API_KEY = process.env.BLOCKFROST_API_KEY ?? "mainnetvB6tGg3rWzUnDymcjh9q7f5ewdQ3bzLN";
 const API_URL = "http://localhost:3000";
-const NETWORK = "preprod" as const;
+const NETWORK = "mainnet" as const;
 
 async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -36,7 +36,7 @@ async function step(n: number, name: string, fn: () => Promise<void>): Promise<v
 }
 
 async function main() {
-  console.log("🚀 BotBrained.ai E2E Validation Test — Cardano Preprod");
+  console.log("🚀 BotBrained.ai E2E Validation Test — Cardano Mainnet");
   console.log(`API: ${API_URL}`);
   console.log(`Network: ${NETWORK}`);
 
@@ -72,11 +72,11 @@ async function main() {
     const balance = await agentWallet.getBalance();
     console.log(`  Initial balance: ${balance.ada} ADA (${balance.lovelace} lovelace)`);
     console.log("");
-    console.log("  ⚠️  To continue the E2E test, you need to send some tADA to this agent.");
-    console.log(`  Send at least 20 tADA to: ${agentAddress}`);
-    console.log("  Use the Cardano Preprod faucet or send from your funded wallet.");
+    console.log("  ⚠️  To continue the E2E test, you need to send some ADA to this agent.");
+    console.log(`  Send at least 20 ADA to: ${agentAddress}`);
+    console.log("  Send from your funded Cardano wallet.");
     console.log("");
-    console.log("  Your poster wallet: addr_test1qp23csc7aj08d6kud2qlpuxkfxwnqczc2pg49ffep2a4md0mey8c3h3pgmxaf8rpvlanxcamvspe5z0lglclwlghl6ksga8v67");
+    console.log("  Your poster wallet: addr1qp23csc7aj08d6kud2qlpuxkfxwnqczc2pg49ffep2a4md0mey8c3h3pgmxaf8rpvlanxcamvspe5z0lglclwlghl6ksgav8v67");
   });
 
   // -----------------------------------------------------------------------
@@ -109,7 +109,7 @@ async function main() {
   let bountyId: string;
 
   await step(3, "Post a test bounty", async () => {
-    const posterAddress = "addr_test1qp23csc7aj08d6kud2qlpuxkfxwnqczc2pg49ffep2a4md0mey8c3h3pgmxaf8rpvlanxcamvspe5z0lglclwlghl6ksga8v67";
+    const posterAddress = "addr1qp23csc7aj08d6kud2qlpuxkfxwnqczc2pg49ffep2a4md0mey8c3h3pgmxaf8rpvlanxcamvspe5z0lglclwlghl6ksgav8v67";
 
     // First, build the post-bounty tx via API
     const buildRes = await fetch(`${API_URL}/v1/bounties/build-post`, {
@@ -182,7 +182,7 @@ async function main() {
 
     // Test policy compliance check
     const compliance = await agentWallet.checkPolicyCompliance({
-      to: "addr_test1qp23csc7aj08d6kud2qlpuxkfxwnqczc2pg49ffep2a4md0mey8c3h3pgmxaf8rpvlanxcamvspe5z0lglclwlghl6ksga8v67",
+      to: "addr1qp23csc7aj08d6kud2qlpuxkfxwnqczc2pg49ffep2a4md0mey8c3h3pgmxaf8rpvlanxcamvspe5z0lglclwlghl6ksgav8v67",
       lovelace: 1_000_000n,
     });
     console.log(`  Policy compliance: ${JSON.stringify(compliance)}`);
@@ -257,7 +257,7 @@ async function main() {
   console.log("Database stores and retrieves bounties/agents/disputes.");
   console.log("Redis caching and rate limiting are operational.");
   console.log("\nFor full on-chain E2E (posting, claiming, submitting, paying):");
-  console.log("1. Fund the agent wallet with tADA from the Preprod faucet");
+  console.log("1. Fund the agent wallet with ADA from your funded Cardano wallet");
   console.log("2. Use the poster's signing key to sign the post-bounty tx");
   console.log("3. The SDK's send()/signTx()/submitTx() flow handles the rest");
 }

@@ -16,7 +16,7 @@ import { AgentWallet, BountyClient } from "@agenteconomy/sdk";
 // Create a new agent wallet
 const { wallet, mnemonic } = await AgentWallet.create({
   blockfrostApiKey: process.env.BLOCKFROST_API_KEY!,
-  network: "preprod",
+  network: "mainnet",
 });
 console.log("Address:", await wallet.getAddress());
 console.log("Save your mnemonic securely:", mnemonic.join(" "));
@@ -26,7 +26,7 @@ const balance = await wallet.getBalance();
 console.log(`Balance: ${balance.ada} ADA`);
 
 // Discover and claim bounties
-const client = new BountyClient({ wallet, network: "preprod" });
+const client = new BountyClient({ wallet, network: "mainnet" });
 const bounties = await client.discoverBounties({
   category: "DataExtraction",
   sort: "reward_desc",

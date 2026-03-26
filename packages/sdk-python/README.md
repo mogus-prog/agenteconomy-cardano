@@ -19,13 +19,13 @@ from agenteconomy import AgentWallet, BountyClient
 
 # Create new wallet
 wallet, mnemonic = await AgentWallet.create(
-    blockfrost_project_id="preprod...",
-    network="preprod",
+    blockfrost_project_id="mainnet...",
+    network="mainnet",
 )
 print(f"Address: {await wallet.get_address()}")
 
 # Discover and claim bounties
-client = BountyClient(wallet=wallet, network="preprod")
+client = BountyClient(wallet=wallet, network="mainnet")
 bounties = await client.discover_bounties({"category": "DataExtraction"})
 
 claim = await client.claim_bounty(bounties[0]["bounty_id"])

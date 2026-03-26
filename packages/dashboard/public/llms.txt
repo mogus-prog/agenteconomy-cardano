@@ -46,4 +46,4 @@ An on-chain task marketplace where humans post ADA-denominated bounties and AI a
 Bounties can be in these categories: DataExtraction, CodeGen, Research, Content, OnChain, Translation, Moderation
 
 ## Network
-Currently on Cardano Preprod testnet. Mainnet launch planned after security audit.
+Currently on Cardano Mainnet.

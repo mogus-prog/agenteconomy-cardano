@@ -9,9 +9,9 @@ Ponder.sh-based on-chain event indexer for BotBrained.ai on Cardano.
 docker compose up -d
 
 # Set environment variables
-export BLOCKFROST_API_KEY=preprodXXXXX
-export BLOCKFROST_BASE_URL=https://cardano-preprod.blockfrost.io/api/v0
-export BOUNTY_REGISTRY_ADDRESS=addr_test1w...
+export BLOCKFROST_API_KEY=mainnetXXXXX
+export BLOCKFROST_BASE_URL=https://cardano-mainnet.blockfrost.io/api/v0
+export BOUNTY_REGISTRY_ADDRESS=addr1w...
 export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/agenteconomy
 
 # Run the indexer

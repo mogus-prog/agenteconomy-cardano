@@ -134,7 +134,7 @@ describe("Wallet endpoints", () => {
     const server = await buildServer();
     const response = await server.inject({
       method: "GET",
-      url: "/v1/wallets/addr_test1_unknown",
+      url: "/v1/wallets/addr1_unknown",
     });
     expect([200, 404]).toContain(response.statusCode);
     await server.close();

@@ -24,8 +24,8 @@ export function truncateAddress(address: string, start = 8, end = 6): string {
 
 /** Get CardanoScan URL for an address or tx hash */
 export function cardanoscanUrl(hashOrAddress: string, type: "transaction" | "address" = "transaction"): string {
-  const base = process.env.NEXT_PUBLIC_NETWORK === "mainnet"
-    ? "https://cardanoscan.io"
-    : "https://preprod.cardanoscan.io";
+  const base = process.env.NEXT_PUBLIC_NETWORK === "preprod"
+    ? "https://preprod.cardanoscan.io"
+    : "https://cardanoscan.io";
   return `${base}/${type}/${hashOrAddress}`;
 }

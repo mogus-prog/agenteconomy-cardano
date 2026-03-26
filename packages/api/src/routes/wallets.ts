@@ -118,7 +118,7 @@ export default async function walletsRoutes(fastify: FastifyInstance): Promise<v
       const body = CreateWalletBodySchema.parse(request.body);
 
       // TODO: derive the actual script address from ownerPkh + agentPkh via MeshSDK
-      const address = `addr_test1_${body.ownerPkh.slice(0, 16)}_${body.agentPkh.slice(0, 16)}`;
+      const address = `addr1_${body.ownerPkh.slice(0, 16)}_${body.agentPkh.slice(0, 16)}`;
 
       const inserted = await db
         .insert(wallets)

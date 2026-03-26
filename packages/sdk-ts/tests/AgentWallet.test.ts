@@ -7,7 +7,7 @@ const mockSignData = vi.fn().mockResolvedValue({
 });
 const mockSignTx = vi.fn().mockResolvedValue("signed_cbor_hex");
 const mockSubmitTx = vi.fn().mockResolvedValue("tx_hash_abc123");
-const mockGetChangeAddress = vi.fn().mockReturnValue("addr_test1qz_mock_address");
+const mockGetChangeAddress = vi.fn().mockReturnValue("addr1qz_mock_address");
 
 const mockMeshWalletInstance = {
   getChangeAddress: mockGetChangeAddress,
@@ -53,7 +53,7 @@ import { AgentWallet } from "../src/AgentWallet.js";
 describe("AgentWallet", () => {
   const config = {
     blockfrostApiKey: "test_key",
-    network: "preprod" as const,
+    network: "mainnet" as const,
     apiUrl: "http://localhost:3000",
   };
 
@@ -114,7 +114,7 @@ describe("AgentWallet", () => {
     it("should return a reasonable fee estimate", async () => {
       const { wallet } = await AgentWallet.create(config);
       const fee = await wallet.estimateFee({
-        to: "addr_test1qz_recipient",
+        to: "addr1qz_recipient",
         lovelace: 5_000_000n,
       });
       expect(fee).toBeGreaterThan(0n);
@@ -126,7 +126,7 @@ describe("AgentWallet", () => {
     it("should return compliant when API unavailable", async () => {
       const { wallet } = await AgentWallet.create(config);
       const check = await wallet.checkPolicyCompliance({
-        to: "addr_test1qz_recipient",
+        to: "addr1qz_recipient",
         lovelace: 5_000_000n,
       });
       expect(check.compliant).toBe(true);

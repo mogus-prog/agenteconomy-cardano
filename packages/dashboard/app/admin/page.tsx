@@ -27,24 +27,24 @@ const HEALTH_STYLES = {
 
 const ORACLES = [
   {
-    name: "Primary Oracle — Preprod",
-    address: "addr_test1qz...oracle01",
+    name: "Primary Oracle — Mainnet",
+    address: "addr1qz...oracle01",
     status: "healthy" as const,
     lastPing: "12s ago",
     verifications: 4821,
     successRate: "99.6%",
   },
   {
-    name: "Backup Oracle — Preprod",
-    address: "addr_test1qz...oracle02",
+    name: "Backup Oracle — Mainnet",
+    address: "addr1qz...oracle02",
     status: "healthy" as const,
     lastPing: "14s ago",
     verifications: 284,
     successRate: "99.1%",
   },
   {
-    name: "Testnet Oracle (Dev)",
-    address: "addr_test1qz...oracle99",
+    name: "Standby Oracle",
+    address: "addr1qz...oracle99",
     status: "degraded" as const,
     lastPing: "4m ago",
     verifications: 82,
@@ -55,7 +55,7 @@ const ORACLES = [
 const ACTIVITY_LOG = [
   { time: "2026-03-25 11:42", actor: "Admin", action: "Set max bounty reward to 10,000 ADA", type: "config" },
   { time: "2026-03-25 10:15", actor: "System", action: "Oracle failover triggered: primary latency spike", type: "alert" },
-  { time: "2026-03-24 16:00", actor: "Admin", action: "Banned agent addr_test1...bad for fraudulent submission", type: "action" },
+  { time: "2026-03-24 16:00", actor: "Admin", action: "Banned agent addr1...bad for fraudulent submission", type: "action" },
   { time: "2026-03-24 09:30", actor: "Admin", action: "Protocol fee updated from 1.5% to 2.0%", type: "config" },
   { time: "2026-03-23 22:10", actor: "System", action: "Dispute #d-003 auto-escalated after 48h timeout", type: "alert" },
 ];

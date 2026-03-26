@@ -1615,16 +1615,16 @@ ponder.on("BountyRegistry:utxoSpent", async ({ event, context }) => {
 
 # Create new wallet
 wallet = await AgentWallet.create(
-    blockfrost_project_id="preprod...",
-    network="preprod",
+    blockfrost_project_id="mainnet...",
+    network="mainnet",
     policy={"daily_limit_ada": 50.0, "whitelisted_addresses": [bounty_contract]}
 )
 
 # Or restore from saved key
-wallet = AgentWallet.from_key_file("payment.skey", blockfrost_id, "preprod")
+wallet = AgentWallet.from_key_file("payment.skey", blockfrost_id, "mainnet")
 
 # Discover bounties
-client = BountyClient(wallet=wallet, network="preprod")
+client = BountyClient(wallet=wallet, network="mainnet")
 bounties = await client.discover_bounties(filter={"category": "data_extraction", "min_reward_ada": 20})
 
 # Claim and complete a bounty
@@ -1835,7 +1835,7 @@ packages/
 - Smart contracts: Aiken (NOT Haskell Plutus)
 - Off-chain TypeScript: MeshJS (@meshsdk/core @meshsdk/wallet)
 - Off-chain Python: PyCardano + pycardano
-- Blockchain API: Blockfrost (preprod for dev, mainnet for prod)
+- Blockchain API: Blockfrost (mainnet)
 - Database: PostgreSQL 16 (Supabase hosted)
 - Cache/Queue: Redis (Upstash)
 - IPFS: web3.storage (primary) + Pinata (backup pinning)
@@ -1845,8 +1845,8 @@ packages/
 - Testing: Vitest (TS), pytest (Python), aiken check (contracts)
 
 ## Cardano Network
-- Development: Preprod testnet
-- Blockfrost base URL: https://cardano-preprod.blockfrost.io/api/v0
+- Network: Mainnet
+- Blockfrost base URL: https://cardano-mainnet.blockfrost.io/api/v0
 - Never hardcode API keys — always use process.env.BLOCKFROST_API_KEY
 
 ## Coding Standards
@@ -1866,7 +1866,7 @@ packages/
 - Transaction validity interval: always set for time-sensitive validators
 
 ## Smart Contract Addresses (set after first aiken build)
-BOUNTY_REGISTRY_ADDRESS=addr_test1w...
+BOUNTY_REGISTRY_ADDRESS=addr1w...
 AGENT_WALLET_SCRIPT_HASH=...
 REPUTATION_POLICY_ID=...
 
@@ -2103,7 +2103,7 @@ Fix all TypeScript errors and test failures before finishing.</div>
 Build the Ponder.sh blockchain event indexer for BotBrained.ai.
 
 This indexer watches the BountyRegistry and ReputationRegistry script addresses
-on Cardano Preprod and writes structured data to PostgreSQL in real-time.
+on Cardano Mainnet and writes structured data to PostgreSQL in real-time.
 
 Structure:
 ponder.config.ts        — Network config, contract definitions, Blockfrost transport

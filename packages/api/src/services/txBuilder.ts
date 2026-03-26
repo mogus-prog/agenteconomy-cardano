@@ -90,12 +90,12 @@ function getAgentWalletScriptCbor(): string {
   return loadScriptCbor("agent_wallet.agent_wallet.spend");
 }
 
-/** Derive a Preprod (networkId 0) script address from compiled CBOR. */
+/** Derive a Mainnet (networkId 1) script address from compiled CBOR. */
 function getScriptAddress(compiledCode: string): string {
   const { address } = serializePlutusScript(
     { code: compiledCode, version: "V3" },
     undefined,
-    0, // Preprod network
+    1, // Mainnet
   );
   return address;
 }
@@ -152,7 +152,7 @@ function createTxBuilder(): MeshTxBuilder {
  * the builder. We return a rough estimate here.
  */
 function estimateFee(txHex: string): bigint {
-  // Cardano fee ≈ 155381 + 44 * txSizeBytes (linear fee model for preprod)
+  // Cardano fee ≈ 155381 + 44 * txSizeBytes (linear fee model for mainnet)
   const txSizeBytes = BigInt(txHex.length / 2);
   return 155_381n + 44n * txSizeBytes;
 }

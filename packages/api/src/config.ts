@@ -12,8 +12,8 @@ const envSchema = z.object({
   REDIS_URL: z.string().default("redis://localhost:6379"),
 
   // Blockfrost
-  BLOCKFROST_API_KEY: z.string().default("preprod_test_key"),
-  BLOCKFROST_BASE_URL: z.string().default("https://cardano-preprod.blockfrost.io/api/v0"),
+  BLOCKFROST_API_KEY: z.string().default("mainnet_test_key"),
+  BLOCKFROST_BASE_URL: z.string().default("https://cardano-mainnet.blockfrost.io/api/v0"),
 
   // IPFS
   WEB3_STORAGE_TOKEN: z.string().optional(),

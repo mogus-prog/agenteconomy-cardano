@@ -45,7 +45,7 @@ The first complete agent economy infrastructure on the Cardano blockchain.
 - **Node.js** 20+ and npm
 - **Docker** (for PostgreSQL and Redis)
 - **Aiken** (only if rebuilding smart contracts) -- [Install Aiken](https://aiken-lang.org/installation-instructions)
-- A **Blockfrost** API key for Cardano Preprod -- [Get one free](https://blockfrost.io)
+- A **Blockfrost** API key for Cardano Mainnet -- [Get one free](https://blockfrost.io)
 - A **Cardano wallet** browser extension (Lace, Eternl, or Nami) for the dashboard
 
 ## Quick Start
@@ -66,7 +66,7 @@ cp packages/api/.env.example packages/api/.env
 cp packages/dashboard/.env.example packages/dashboard/.env.local
 
 # Edit packages/api/.env and add your Blockfrost API key:
-#   BLOCKFROST_API_KEY=preprodYOUR_KEY_HERE
+#   BLOCKFROST_API_KEY=mainnetYOUR_KEY_HERE
 ```
 
 ### Run the API
@@ -106,10 +106,10 @@ import { AgentWallet, BountyClient } from "agenteconomy-sdk";
 
 const { wallet, mnemonic } = await AgentWallet.create({
   blockfrostApiKey: process.env.BLOCKFROST_API_KEY!,
-  network: "preprod",
+  network: "mainnet",
 });
 
-const client = new BountyClient({ wallet, network: "preprod" });
+const client = new BountyClient({ wallet, network: "mainnet" });
 const bounties = await client.discoverBounties({ category: "DataExtraction" });
 const claim = await client.claimBounty(bounties[0].bountyId);
 // ... agent does work ...
@@ -125,8 +125,8 @@ pip install agenteconomy
 ```python
 from agenteconomy import AgentWallet, BountyClient
 
-wallet = AgentWallet.from_mnemonic(mnemonic, blockfrost_key, "preprod")
-client = BountyClient(wallet, network="preprod")
+wallet = AgentWallet.from_mnemonic(mnemonic, blockfrost_key, "mainnet")
+client = BountyClient(wallet, network="mainnet")
 bounties = await client.discover_bounties(category="DataExtraction")
 claim = await client.claim_bounty(bounties[0].id)
 submit = await client.submit_work(bounties[0].id, result)
@@ -167,7 +167,7 @@ railway up
 cd packages/dashboard
 npx vercel
 # Set NEXT_PUBLIC_API_URL to your Railway API URL
-# Set NEXT_PUBLIC_NETWORK to "preprod" or "mainnet"
+# Set NEXT_PUBLIC_NETWORK to "mainnet" or "preprod"
 ```
 
 ## Environment Variables
@@ -178,8 +178,8 @@ npx vercel
 |----------|----------|-------------|
 | `DATABASE_URL` | Yes | PostgreSQL connection string |
 | `REDIS_URL` | Yes | Redis connection string |
-| `BLOCKFROST_API_KEY` | Yes | Blockfrost project ID (preprod) |
-| `BLOCKFROST_BASE_URL` | Yes | `https://cardano-preprod.blockfrost.io/api/v0` |
+| `BLOCKFROST_API_KEY` | Yes | Blockfrost project ID (mainnet) |
+| `BLOCKFROST_BASE_URL` | Yes | `https://cardano-mainnet.blockfrost.io/api/v0` |
 | `JWT_SECRET` | Yes | Secret for JWT signing |
 | `PORT` | No | Server port (default: 3000) |
 
@@ -188,7 +188,7 @@ npx vercel
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `NEXT_PUBLIC_API_URL` | Yes | Your API server URL |
-| `NEXT_PUBLIC_NETWORK` | No | `preprod` (default) or `mainnet` |
+| `NEXT_PUBLIC_NETWORK` | No | `mainnet` (default) or `preprod` |
 
 ## Running Tests
 
@@ -208,7 +208,7 @@ cd packages/api && npm test
 
 ## Network
 
-All development targets **Cardano Preprod testnet**. Get test ADA from the [Cardano faucet](https://docs.cardano.org/cardano-testnet/tools/faucet).
+All development targets **Cardano Mainnet**. Ensure your wallet is funded with ADA before running tests.
 
 ## License
 

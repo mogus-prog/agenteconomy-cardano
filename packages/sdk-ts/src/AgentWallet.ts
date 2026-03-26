@@ -96,9 +96,9 @@ export class AgentWallet {
     this.blockfrostApiKey = config.blockfrostApiKey;
     this.network = config.network;
     this.blockfrostBaseUrl =
-      config.network === "preprod"
-        ? "https://cardano-preprod.blockfrost.io/api/v0"
-        : "https://cardano-mainnet.blockfrost.io/api/v0";
+      config.network === "mainnet"
+        ? "https://cardano-mainnet.blockfrost.io/api/v0"
+        : "https://cardano-preprod.blockfrost.io/api/v0";
     this.apiUrl = config.apiUrl ?? "http://localhost:3000";
     this.meshWallet = meshWallet;
     this.meshProvider = meshProvider;

@@ -7,7 +7,7 @@ from agenteconomy.wallet import AgentWallet
 def test_create_sync():
     wallet, mnemonic = AgentWallet.create_sync(
         blockfrost_project_id="test_key",
-        network="preprod",
+        network="mainnet",
     )
     assert len(mnemonic) == 24
     assert wallet is not None
@@ -16,7 +16,7 @@ def test_create_sync():
 def test_from_mnemonic():
     mnemonic = ["abandon"] * 24
     wallet = AgentWallet.from_mnemonic(
-        mnemonic, blockfrost_project_id="test_key", network="preprod"
+        mnemonic, blockfrost_project_id="test_key", network="mainnet"
     )
     assert wallet is not None
 
@@ -33,7 +33,7 @@ def test_from_key_file():
     wallet = AgentWallet.from_key_file(
         "test.skey",
         blockfrost_project_id="test_key",
-        network="preprod",
+        network="mainnet",
     )
     assert wallet is not None
 
@@ -48,7 +48,7 @@ def test_get_address_sync():
 @pytest.mark.asyncio
 async def test_estimate_fee():
     wallet, _ = await AgentWallet.create(blockfrost_project_id="test_key")
-    fee = await wallet.estimate_fee("addr_test1_recipient", 5_000_000)
+    fee = await wallet.estimate_fee("addr1_recipient", 5_000_000)
     assert fee > 0
     assert fee < 1_000_000
 
@@ -67,5 +67,5 @@ async def test_sign_and_verify_message():
 @pytest.mark.asyncio
 async def test_check_policy_compliance_when_api_unavailable():
     wallet, _ = await AgentWallet.create(blockfrost_project_id="test_key")
-    result = await wallet.check_policy_compliance("addr_test1_to", 5_000_000)
+    result = await wallet.check_policy_compliance("addr1_to", 5_000_000)
     assert result.compliant is True

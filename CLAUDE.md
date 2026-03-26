@@ -23,7 +23,7 @@ packages/
 - Smart contracts:    Aiken (NOT Haskell Plutus)
 - Off-chain TS:       MeshJS (@meshsdk/core + @meshsdk/wallet)
 - Off-chain Python:   PyCardano (pycardano)
-- Blockchain API:     Blockfrost (Preprod testnet)
+- Blockchain API:     Blockfrost (Mainnet)
 - Database:           PostgreSQL 16 via Drizzle ORM (Supabase hosted)
 - Cache & Queues:     Redis 7 (Upstash)
 - IPFS (primary):     web3.storage
@@ -34,8 +34,8 @@ packages/
 - Monitoring:         Sentry + Prometheus/Grafana
 
 ## Cardano Network
-- All development on Cardano Preprod testnet
-- Blockfrost URL: https://cardano-preprod.blockfrost.io/api/v0
+- All development on Cardano Mainnet
+- Blockfrost URL: https://cardano-mainnet.blockfrost.io/api/v0
 - Never hardcode API keys — always process.env.BLOCKFROST_API_KEY
 
 ## Core Cardano Concepts (Apply Correctly)
@@ -61,5 +61,5 @@ REPUTATION_POLICY_ID=1484440299a95dd439127458cb3ea1360157618547e6c5c042ed0975
 - sdk-ts:      npm run build clean, npm test 100% pass
 - sdk-python:  pytest 100% pass, pip install -e . works
 - api:         npm test 100% pass, all endpoints return correct status codes
-- indexer:     syncs Preprod events, upserts are idempotent
+- indexer:     syncs Mainnet events, upserts are idempotent
 - dashboard:   builds clean, all 13 pages render, wallet connect works

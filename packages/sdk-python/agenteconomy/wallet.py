@@ -20,7 +20,7 @@ class AgentWallet:
         self,
         address: str,
         blockfrost_project_id: str,
-        network: str = "preprod",
+        network: str = "mainnet",
         api_url: str = "http://localhost:3000",
     ) -> None:
         self._address = address
@@ -28,16 +28,16 @@ class AgentWallet:
         self._network = network
         self._api_url = api_url
         self._blockfrost_url = (
-            "https://cardano-preprod.blockfrost.io/api/v0"
-            if network == "preprod"
-            else "https://cardano-mainnet.blockfrost.io/api/v0"
+            "https://cardano-mainnet.blockfrost.io/api/v0"
+            if network == "mainnet"
+            else "https://cardano-preprod.blockfrost.io/api/v0"
         )
 
     @classmethod
     async def create(
         cls,
         blockfrost_project_id: str,
-        network: str = "preprod",
+        network: str = "mainnet",
         policy: Optional[dict[str, Any]] = None,
         api_url: str = "http://localhost:3000",
     ) -> tuple["AgentWallet", list[str]]:
@@ -48,7 +48,7 @@ class AgentWallet:
             Save the mnemonic securely — it is never stored.
         """
         mnemonic = ["abandon"] * 24  # Placeholder — use pycardano in production
-        address = f"addr_test1qz_new_{id(cls)}"
+        address = f"addr1qz_new_{id(cls)}"
         wallet = cls(address, blockfrost_project_id, network, api_url)
         return wallet, mnemonic
 
@@ -57,13 +57,13 @@ class AgentWallet:
         cls,
         mnemonic: list[str],
         blockfrost_project_id: str,
-        network: str = "preprod",
+        network: str = "mainnet",
         api_url: str = "http://localhost:3000",
     ) -> "AgentWallet":
         """Restore wallet from a 24-word BIP-39 mnemonic."""
         if len(mnemonic) != 24:
             raise ValueError("Mnemonic must be 24 words")
-        address = f"addr_test1qz_mnemonic_{id(cls)}"
+        address = f"addr1qz_mnemonic_{id(cls)}"
         return cls(address, blockfrost_project_id, network, api_url)
 
     @classmethod
@@ -71,11 +71,11 @@ class AgentWallet:
         cls,
         key_file_path: str,
         blockfrost_project_id: str,
-        network: str = "preprod",
+        network: str = "mainnet",
         api_url: str = "http://localhost:3000",
     ) -> "AgentWallet":
         """Load wallet from a Cardano .skey file."""
-        address = f"addr_test1qz_keyfile_{id(cls)}"
+        address = f"addr1qz_keyfile_{id(cls)}"
         return cls(address, blockfrost_project_id, network, api_url)
 
     # Sync wrappers

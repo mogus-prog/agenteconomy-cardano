@@ -69,7 +69,7 @@ function WalletContent({ address }: { address: string }) {
             <p className="text-4xl font-mono font-black text-gradient-gold">
               {balance ? formatAda(balance.lovelace) : "0 ₳"}
             </p>
-            <p className="mt-1 text-sm text-muted-foreground">Cardano Preprod</p>
+            <p className="mt-1 text-sm text-muted-foreground">Cardano Mainnet</p>
             <div className="mt-6 flex gap-3">
               <SendDialog address={address} />
             </div>
@@ -264,7 +264,7 @@ function SendDialog({ address }: { address: string }) {
               Recipient Address
             </label>
             <Input
-              placeholder="addr_test1..."
+              placeholder="addr1..."
               value={toAddress}
               onChange={(e) => setToAddress(e.target.value)}
               className="border-white/[0.08] bg-white/[0.03] font-mono text-sm"

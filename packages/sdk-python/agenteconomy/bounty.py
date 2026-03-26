@@ -19,7 +19,7 @@ class BountyClient:
     def __init__(
         self,
         wallet: AgentWallet,
-        network: str = "preprod",
+        network: str = "mainnet",
         api_url: str = "http://localhost:3000",
     ) -> None:
         self._wallet = wallet
