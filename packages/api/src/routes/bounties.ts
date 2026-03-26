@@ -418,13 +418,42 @@ export default async function bountiesRoutes(fastify: FastifyInstance): Promise<
     ) => {
       const body = BuildPostBodySchema.parse(request.body);
 
-      // TODO: build Cardano transaction using MeshSDK, return unsigned CBOR
-      void body;
-      return reply.status(200).send({
-        unsignedTxCbor: "84a400placeholder",
-        fee: "175000",
-        ttl: Math.floor(Date.now() / 1000) + 300,
-      });
+      try {
+        const { buildPostBountyTx } = await import("../services/txBuilder.js");
+        const { encodeBountyDatum } = await import("../services/datumEncoder.js");
+
+        const datum = encodeBountyDatum({
+          title: body.title,
+          descriptionIpfs: body.descriptionIpfs,
+          category: body.category,
+          difficulty: body.difficulty,
+          rewardLovelace: BigInt(body.rewardLovelace),
+          deadline: body.deadline,
+          verificationType: body.verificationType,
+          posterAddress: body.posterAddress,
+          tags: body.tags ?? [],
+        });
+
+        const result = await buildPostBountyTx({
+          posterAddress: body.posterAddress,
+          rewardLovelace: BigInt(body.rewardLovelace),
+          datum,
+        });
+
+        return reply.status(200).send({
+          unsignedTxCbor: result.unsignedTxCbor,
+          fee: result.feeEstimateLovelace.toString(),
+          ttl: Math.floor(Date.now() / 1000) + 300,
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        request.log.error({ err }, "Failed to build post bounty tx");
+        return reply.status(500).send({
+          error: "ChainError",
+          code: "CHAIN_ERROR",
+          message: `Failed to build transaction: ${msg}`,
+        });
+      }
     },
   );
 
