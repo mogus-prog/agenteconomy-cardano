@@ -77,6 +77,16 @@ const DisputeBodySchema = z.object({
   evidenceIpfs: z.string().optional(),
 });
 
+const BuildVerifyAndPayBodySchema = z.object({
+  oracleAddress: z.string(),
+});
+
+const BuildDisputeBodySchema = z.object({
+  posterAddress: z.string(),
+  reason: z.string(),
+  evidenceIpfs: z.string().optional(),
+});
+
 const CancelBodySchema = z.object({
   posterAddress: z.string(),
   signedTx: z.string(),
@@ -96,6 +106,8 @@ type BuildSubmitWorkBody = z.infer<typeof BuildSubmitWorkBodySchema>;
 type SubmitWorkBody = z.infer<typeof SubmitWorkBodySchema>;
 type VerifyAndPayBody = z.infer<typeof VerifyAndPayBodySchema>;
 type DisputeBody = z.infer<typeof DisputeBodySchema>;
+type BuildVerifyAndPayBody = z.infer<typeof BuildVerifyAndPayBodySchema>;
+type BuildDisputeBody = z.infer<typeof BuildDisputeBodySchema>;
 type CancelBody = z.infer<typeof CancelBodySchema>;
 
 // ---------------------------------------------------------------------------
@@ -563,13 +575,64 @@ export default async function bountiesRoutes(fastify: FastifyInstance): Promise<
       const { id } = BountyIdParamsSchema.parse(request.params);
       const body = BuildClaimBodySchema.parse(request.body);
 
-      void id;
-      void body;
-      return reply.status(200).send({
-        unsignedTxCbor: "84a400placeholder",
-        fee: "175000",
-        ttl: Math.floor(Date.now() / 1000) + 300,
-      });
+      try {
+        // Look up bounty from DB to get utxoRef and datum params
+        const rows = await db
+          .select()
+          .from(bounties)
+          .where(eq(bounties.id, id))
+          .limit(1);
+
+        const bounty = rows[0];
+        if (!bounty) {
+          return reply.status(404).send({ error: "Bounty not found" });
+        }
+
+        if (bounty.status !== "open") {
+          return reply.status(409).send({ error: `Bounty is not open (status: ${bounty.status})` });
+        }
+
+        const { buildClaimBountyTx } = await import("../services/txBuilder.js");
+        const { encodeBountyDatum } = await import("../services/datumEncoder.js");
+
+        // Build current datum from stored bounty data
+        const currentDatum = encodeBountyDatum({
+          title: bounty.title,
+          descriptionIpfs: bounty.descriptionIpfs,
+          category: bounty.category,
+          difficulty: bounty.difficulty,
+          rewardLovelace: bounty.rewardLovelace,
+          deadline: bounty.deadline.toISOString(),
+          verificationType: bounty.verificationType,
+          posterAddress: bounty.posterAddress,
+          tags: bounty.tags ?? [],
+        });
+
+        // New datum: same bounty but with Claimed status (constr 1 for status)
+        // For now we re-encode the datum; the on-chain script validates the transition
+        const newDatum = currentDatum;
+
+        const result = await buildClaimBountyTx({
+          bountyUtxoRef: bounty.utxoRef,
+          agentAddress: body.agentAddress,
+          currentDatum,
+          newDatum,
+        });
+
+        return reply.status(200).send({
+          unsignedTxCbor: result.unsignedTxCbor,
+          fee: result.feeEstimateLovelace.toString(),
+          ttl: Math.floor(Date.now() / 1000) + 300,
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        request.log.error({ err }, "Failed to build claim bounty tx");
+        return reply.status(500).send({
+          error: "ChainError",
+          code: "CHAIN_ERROR",
+          message: `Failed to build transaction: ${msg}`,
+        });
+      }
     },
   );
 
@@ -617,13 +680,64 @@ export default async function bountiesRoutes(fastify: FastifyInstance): Promise<
       const { id } = BountyIdParamsSchema.parse(request.params);
       const body = BuildSubmitWorkBodySchema.parse(request.body);
 
-      void id;
-      void body;
-      return reply.status(200).send({
-        unsignedTxCbor: "84a400placeholder",
-        fee: "175000",
-        ttl: Math.floor(Date.now() / 1000) + 300,
-      });
+      try {
+        // Look up bounty from DB to get utxoRef and datum params
+        const rows = await db
+          .select()
+          .from(bounties)
+          .where(eq(bounties.id, id))
+          .limit(1);
+
+        const bounty = rows[0];
+        if (!bounty) {
+          return reply.status(404).send({ error: "Bounty not found" });
+        }
+
+        if (bounty.status !== "claimed") {
+          return reply.status(409).send({ error: `Bounty is not claimed (status: ${bounty.status})` });
+        }
+
+        const { buildSubmitWorkTx } = await import("../services/txBuilder.js");
+        const { encodeBountyDatum } = await import("../services/datumEncoder.js");
+
+        // Build current datum from stored bounty data
+        const currentDatum = encodeBountyDatum({
+          title: bounty.title,
+          descriptionIpfs: bounty.descriptionIpfs,
+          category: bounty.category,
+          difficulty: bounty.difficulty,
+          rewardLovelace: bounty.rewardLovelace,
+          deadline: bounty.deadline.toISOString(),
+          verificationType: bounty.verificationType,
+          posterAddress: bounty.posterAddress,
+          tags: bounty.tags ?? [],
+        });
+
+        // New datum: same bounty but with WorkSubmitted status
+        const newDatum = currentDatum;
+
+        const result = await buildSubmitWorkTx({
+          bountyUtxoRef: bounty.utxoRef,
+          agentAddress: body.agentAddress,
+          resultIpfsCid: body.resultIpfs,
+          currentDatum,
+          newDatum,
+        });
+
+        return reply.status(200).send({
+          unsignedTxCbor: result.unsignedTxCbor,
+          fee: result.feeEstimateLovelace.toString(),
+          ttl: Math.floor(Date.now() / 1000) + 300,
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        request.log.error({ err }, "Failed to build submit work tx");
+        return reply.status(500).send({
+          error: "ChainError",
+          code: "CHAIN_ERROR",
+          message: `Failed to build transaction: ${msg}`,
+        });
+      }
     },
   );
 
@@ -659,6 +773,80 @@ export default async function bountiesRoutes(fastify: FastifyInstance): Promise<
   );
 
   // -------------------------------------------------------------------------
+  // POST /v1/bounties/:id/build-verify-and-pay
+  // -------------------------------------------------------------------------
+  fastify.post<{ Params: BountyIdParams; Body: BuildVerifyAndPayBody }>(
+    "/v1/bounties/:id/build-verify-and-pay",
+    async (
+      request: FastifyRequest<{ Params: BountyIdParams; Body: BuildVerifyAndPayBody }>,
+      reply: FastifyReply,
+    ) => {
+      const { id } = BountyIdParamsSchema.parse(request.params);
+      const body = BuildVerifyAndPayBodySchema.parse(request.body);
+
+      try {
+        // Look up bounty from DB to get utxoRef and datum params
+        const rows = await db
+          .select()
+          .from(bounties)
+          .where(eq(bounties.id, id))
+          .limit(1);
+
+        const bounty = rows[0];
+        if (!bounty) {
+          return reply.status(404).send({ error: "Bounty not found" });
+        }
+
+        if (bounty.status !== "submitted") {
+          return reply.status(409).send({ error: `Bounty work is not submitted (status: ${bounty.status})` });
+        }
+
+        if (!bounty.agentAddress) {
+          return reply.status(409).send({ error: "Bounty has no assigned agent" });
+        }
+
+        const { buildVerifyAndPayTx } = await import("../services/txBuilder.js");
+        const { encodeBountyDatum } = await import("../services/datumEncoder.js");
+
+        // Build current datum from stored bounty data
+        const currentDatum = encodeBountyDatum({
+          title: bounty.title,
+          descriptionIpfs: bounty.descriptionIpfs,
+          category: bounty.category,
+          difficulty: bounty.difficulty,
+          rewardLovelace: bounty.rewardLovelace,
+          deadline: bounty.deadline.toISOString(),
+          verificationType: bounty.verificationType,
+          posterAddress: bounty.posterAddress,
+          tags: bounty.tags ?? [],
+        });
+
+        const result = await buildVerifyAndPayTx({
+          bountyUtxoRef: bounty.utxoRef,
+          agentAddress: bounty.agentAddress,
+          posterAddress: bounty.posterAddress,
+          rewardLovelace: bounty.rewardLovelace,
+          currentDatum,
+        });
+
+        return reply.status(200).send({
+          unsignedTxCbor: result.unsignedTxCbor,
+          fee: result.feeEstimateLovelace.toString(),
+          ttl: Math.floor(Date.now() / 1000) + 300,
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        request.log.error({ err }, "Failed to build verify and pay tx");
+        return reply.status(500).send({
+          error: "ChainError",
+          code: "CHAIN_ERROR",
+          message: `Failed to build transaction: ${msg}`,
+        });
+      }
+    },
+  );
+
+  // -------------------------------------------------------------------------
   // POST /v1/bounties/:id/verify-and-pay
   // -------------------------------------------------------------------------
   fastify.post<{ Params: BountyIdParams; Body: VerifyAndPayBody }>(
@@ -689,6 +877,78 @@ export default async function bountiesRoutes(fastify: FastifyInstance): Promise<
         verdict: body.verdict,
         status: "submitted",
       });
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // POST /v1/bounties/:id/build-dispute
+  // -------------------------------------------------------------------------
+  fastify.post<{ Params: BountyIdParams; Body: BuildDisputeBody }>(
+    "/v1/bounties/:id/build-dispute",
+    async (
+      request: FastifyRequest<{ Params: BountyIdParams; Body: BuildDisputeBody }>,
+      reply: FastifyReply,
+    ) => {
+      const { id } = BountyIdParamsSchema.parse(request.params);
+      const body = BuildDisputeBodySchema.parse(request.body);
+
+      try {
+        // Look up bounty from DB to get utxoRef and datum params
+        const rows = await db
+          .select()
+          .from(bounties)
+          .where(eq(bounties.id, id))
+          .limit(1);
+
+        const bounty = rows[0];
+        if (!bounty) {
+          return reply.status(404).send({ error: "Bounty not found" });
+        }
+
+        if (bounty.status !== "submitted") {
+          return reply.status(409).send({ error: `Bounty work is not submitted (status: ${bounty.status})` });
+        }
+
+        const { buildDisputeTx } = await import("../services/txBuilder.js");
+        const { encodeBountyDatum } = await import("../services/datumEncoder.js");
+
+        // Build current datum from stored bounty data
+        const currentDatum = encodeBountyDatum({
+          title: bounty.title,
+          descriptionIpfs: bounty.descriptionIpfs,
+          category: bounty.category,
+          difficulty: bounty.difficulty,
+          rewardLovelace: bounty.rewardLovelace,
+          deadline: bounty.deadline.toISOString(),
+          verificationType: bounty.verificationType,
+          posterAddress: bounty.posterAddress,
+          tags: bounty.tags ?? [],
+        });
+
+        // New datum: same bounty but with Disputed status
+        const newDatum = currentDatum;
+
+        const result = await buildDisputeTx({
+          bountyUtxoRef: bounty.utxoRef,
+          posterAddress: body.posterAddress,
+          currentDatum,
+          newDatum,
+        });
+
+        return reply.status(200).send({
+          unsignedTxCbor: result.unsignedTxCbor,
+          fee: result.feeEstimateLovelace.toString(),
+          ttl: Math.floor(Date.now() / 1000) + 300,
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        request.log.error({ err }, "Failed to build dispute tx");
+        return reply.status(500).send({
+          error: "ChainError",
+          code: "CHAIN_ERROR",
+          message: `Failed to build transaction: ${msg}`,
+        });
+      }
     },
   );
 

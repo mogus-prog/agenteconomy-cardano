@@ -207,6 +207,46 @@ export function submitWork(
   });
 }
 
+export function buildApprovePay(
+  bountyId: string,
+  params: { poster: string }
+) {
+  return apiFetch<BuildTxResponse>(`/bounties/${bountyId}/build-approve`, {
+    method: "POST",
+    body: params,
+  });
+}
+
+export function submitApprovePay(
+  bountyId: string,
+  params: { signedTxCbor: string }
+) {
+  return apiFetch<SubmitTxResponse>(`/bounties/${bountyId}/submit-approve`, {
+    method: "POST",
+    body: params,
+  });
+}
+
+export function buildDispute(
+  bountyId: string,
+  params: { poster: string; reason: string }
+) {
+  return apiFetch<BuildTxResponse>(`/bounties/${bountyId}/build-dispute`, {
+    method: "POST",
+    body: params,
+  });
+}
+
+export function submitDispute(
+  bountyId: string,
+  params: { signedTxCbor: string }
+) {
+  return apiFetch<SubmitTxResponse>(`/bounties/${bountyId}/submit-dispute`, {
+    method: "POST",
+    body: params,
+  });
+}
+
 export function registerAgent(params: {
   address: string;
   displayName?: string;

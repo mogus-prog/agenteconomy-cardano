@@ -9,6 +9,10 @@ import {
   submitClaimBounty,
   buildSubmitWork,
   submitWork,
+  buildApprovePay,
+  submitApprovePay,
+  buildDispute,
+  submitDispute,
   registerAgent,
   buildSend,
   submitSend,
@@ -154,6 +158,94 @@ export function useSubmitWorkTx() {
     },
     onError: (err: Error) => {
       toast.error("Failed to submit work", { description: err.message });
+    },
+  });
+}
+
+export function useApprovePay() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      bountyId,
+      poster,
+    }: {
+      bountyId: string;
+      poster: string;
+    }) => buildApprovePay(bountyId, { poster }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["bounties"] });
+      qc.invalidateQueries({ queryKey: ["bountyStats"] });
+    },
+    onError: (err: Error) => {
+      toast.error("Failed to build approve transaction", {
+        description: err.message,
+      });
+    },
+  });
+}
+
+export function useSubmitApprovePay() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      bountyId,
+      signedTxCbor,
+    }: {
+      bountyId: string;
+      signedTxCbor: string;
+    }) => submitApprovePay(bountyId, { signedTxCbor }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["bounties"] });
+      qc.invalidateQueries({ queryKey: ["bountyStats"] });
+      toast.success("Bounty approved and paid");
+    },
+    onError: (err: Error) => {
+      toast.error("Failed to submit approval", { description: err.message });
+    },
+  });
+}
+
+export function useBuildDispute() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      bountyId,
+      poster,
+      reason,
+    }: {
+      bountyId: string;
+      poster: string;
+      reason: string;
+    }) => buildDispute(bountyId, { poster, reason }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["bounties"] });
+      qc.invalidateQueries({ queryKey: ["bountyStats"] });
+    },
+    onError: (err: Error) => {
+      toast.error("Failed to build dispute transaction", {
+        description: err.message,
+      });
+    },
+  });
+}
+
+export function useSubmitDispute() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      bountyId,
+      signedTxCbor,
+    }: {
+      bountyId: string;
+      signedTxCbor: string;
+    }) => submitDispute(bountyId, { signedTxCbor }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["bounties"] });
+      qc.invalidateQueries({ queryKey: ["disputes"] });
+      toast.success("Dispute filed successfully");
+    },
+    onError: (err: Error) => {
+      toast.error("Failed to submit dispute", { description: err.message });
     },
   });
 }

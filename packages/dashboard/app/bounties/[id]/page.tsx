@@ -1,16 +1,36 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useState, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useBounty } from "@/lib/queries";
 import { useWalletStore } from "@/lib/store";
 import { formatAda, cardanoscanUrl, truncateAddress } from "@/lib/utils";
+import { assembleSignedTx, enableWallet } from "@/lib/tx-utils";
+import {
+  buildClaimBounty,
+  buildSubmitWork,
+  buildApprovePay,
+  buildDispute,
+} from "@/lib/api";
 import { StatusBadge } from "@/components/status-badge";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { AddressDisplay } from "@/components/address-display";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+
+const API_BASE = "https://api-production-02a1.up.railway.app";
 
 function LoadingSkeleton() {
   return (
@@ -94,10 +114,187 @@ function TxTimeline({ items }: { items: TimelineItem[] }) {
   );
 }
 
+/**
+ * Records/updates bounty status in the DB after a successful on-chain tx.
+ * Fire-and-forget: indexer will pick it up eventually if this fails.
+ */
+async function recordBountyAction(
+  bountyId: string,
+  action: string,
+  txHash: string,
+  extra?: Record<string, unknown>
+) {
+  try {
+    await fetch(`${API_BASE}/v1/bounties/${bountyId}/record-action`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, txHash, ...extra }),
+    });
+  } catch {
+    // Non-critical -- indexer picks it up from chain
+  }
+}
+
+type ActionType = "claim" | "submitWork" | "approve" | "dispute";
+
 export default function BountyDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: bounty, isLoading, error } = useBounty(params.id);
   const { connected, address } = useWalletStore();
+
+  const [processing, setProcessing] = useState<ActionType | null>(null);
+  const [showSubmitWorkModal, setShowSubmitWorkModal] = useState(false);
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [submitWorkResult, setSubmitWorkResult] = useState("");
+  const [disputeReason, setDisputeReason] = useState("");
+
+  const isProcessing = processing !== null;
+
+  const refreshBounty = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["bounty", params.id] });
+    queryClient.invalidateQueries({ queryKey: ["bounties"] });
+    queryClient.invalidateQueries({ queryKey: ["bountyStats"] });
+  }, [queryClient, params.id]);
+
+  /**
+   * Generic transaction flow: build -> sign -> assemble -> submit -> record
+   */
+  const executeTxFlow = useCallback(
+    async (
+      actionType: ActionType,
+      buildFn: () => Promise<{ unsignedTxCbor: string }>,
+      onSuccess: (txHash: string) => void | Promise<void>,
+      recordAction?: string,
+      recordExtra?: Record<string, unknown>
+    ) => {
+      if (!connected || !address) {
+        toast.error("Wallet not connected");
+        return;
+      }
+      const { walletName } = useWalletStore.getState();
+      if (!walletName) {
+        toast.error("No wallet connected");
+        return;
+      }
+
+      setProcessing(actionType);
+      try {
+        // Step 1: Build unsigned transaction via API
+        toast.info("Building transaction...");
+        const buildResult = await buildFn();
+        if (!buildResult.unsignedTxCbor) {
+          throw new Error("No unsigned transaction returned from API");
+        }
+
+        // Step 2: Sign with CIP-30 wallet
+        toast.info("Please sign the transaction in your wallet...");
+        const wallet = await enableWallet(walletName);
+        const witnessSet = await wallet.signTx(buildResult.unsignedTxCbor);
+
+        // Step 3: Assemble signed tx and submit
+        toast.info("Submitting transaction to the blockchain...");
+        const assembledTx = assembleSignedTx(buildResult.unsignedTxCbor, witnessSet);
+        const txHash = await wallet.submitTx(assembledTx);
+
+        // Step 4: Record in DB (fire-and-forget)
+        if (recordAction) {
+          await recordBountyAction(params.id, recordAction, txHash, recordExtra);
+        }
+
+        // Step 5: Success
+        toast.success("Transaction submitted!", {
+          description: `TX: ${txHash.slice(0, 16)}...`,
+        });
+
+        await onSuccess(txHash);
+        refreshBounty();
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        if (msg.includes("User declined") || msg.includes("cancelled")) {
+          toast.error("Transaction cancelled by user");
+        } else {
+          toast.error("Transaction failed", { description: msg });
+        }
+      } finally {
+        setProcessing(null);
+      }
+    },
+    [connected, address, params.id, refreshBounty]
+  );
+
+  // ── Claim Bounty ──
+  const handleClaim = useCallback(() => {
+    if (!address) return;
+    executeTxFlow(
+      "claim",
+      () => buildClaimBounty(params.id, { agent: address }),
+      async () => {
+        // Optionally redirect or just refresh
+      },
+      "claim",
+      { agentAddress: address }
+    );
+  }, [address, params.id, executeTxFlow]);
+
+  // ── Submit Work ──
+  const handleSubmitWork = useCallback(() => {
+    if (!address || !submitWorkResult.trim()) {
+      toast.error("Please enter your work result");
+      return;
+    }
+    setShowSubmitWorkModal(false);
+    executeTxFlow(
+      "submitWork",
+      () =>
+        buildSubmitWork(params.id, {
+          agent: address,
+          resultIpfs: submitWorkResult.trim(),
+        }),
+      async () => {
+        setSubmitWorkResult("");
+      },
+      "submit-work",
+      { agentAddress: address, resultIpfs: submitWorkResult.trim() }
+    );
+  }, [address, params.id, submitWorkResult, executeTxFlow]);
+
+  // ── Approve & Pay ──
+  const handleApprovePay = useCallback(() => {
+    if (!address) return;
+    executeTxFlow(
+      "approve",
+      () => buildApprovePay(params.id, { poster: address }),
+      async () => {
+        // Bounty completed
+      },
+      "approve",
+      { posterAddress: address }
+    );
+  }, [address, params.id, executeTxFlow]);
+
+  // ── Dispute ──
+  const handleDispute = useCallback(() => {
+    if (!address || !disputeReason.trim()) {
+      toast.error("Please enter a reason for the dispute");
+      return;
+    }
+    setShowDisputeModal(false);
+    executeTxFlow(
+      "dispute",
+      () =>
+        buildDispute(params.id, {
+          poster: address,
+          reason: disputeReason.trim(),
+        }),
+      async () => {
+        setDisputeReason("");
+      },
+      "dispute",
+      { posterAddress: address, reason: disputeReason.trim() }
+    );
+  }, [address, params.id, disputeReason, executeTxFlow]);
 
   if (isLoading) return <LoadingSkeleton />;
   if (error || !bounty) return <NotFound />;
@@ -247,9 +444,20 @@ export default function BountyDetailPage() {
 
           {/* Action Buttons */}
           <div className="space-y-3">
+            {/* Claim Bounty */}
             {bounty.status === "open" && connected && !isPoster && (
-              <Button className="btn-primary w-full py-3 text-base">
-                Claim This Bounty
+              <Button
+                className="btn-primary w-full py-3 text-base"
+                disabled={isProcessing}
+                onClick={handleClaim}
+              >
+                {processing === "claim" ? (
+                  <span className="flex items-center gap-2">
+                    <Spinner /> Claiming...
+                  </span>
+                ) : (
+                  "Claim This Bounty"
+                )}
               </Button>
             )}
 
@@ -262,22 +470,52 @@ export default function BountyDetailPage() {
               </Button>
             )}
 
+            {/* Submit Work */}
             {bounty.status === "claimed" && isAgent && (
-              <Button className="btn-primary w-full py-3 text-base">
-                Submit Work
+              <Button
+                className="btn-primary w-full py-3 text-base"
+                disabled={isProcessing}
+                onClick={() => setShowSubmitWorkModal(true)}
+              >
+                {processing === "submitWork" ? (
+                  <span className="flex items-center gap-2">
+                    <Spinner /> Submitting...
+                  </span>
+                ) : (
+                  "Submit Work"
+                )}
               </Button>
             )}
 
+            {/* Approve & Pay */}
             {bounty.status === "submitted" && isPoster && (
               <>
-                <Button className="btn-primary w-full py-3">
-                  Approve &amp; Pay
+                <Button
+                  className="btn-primary w-full py-3"
+                  disabled={isProcessing}
+                  onClick={handleApprovePay}
+                >
+                  {processing === "approve" ? (
+                    <span className="flex items-center gap-2">
+                      <Spinner /> Approving...
+                    </span>
+                  ) : (
+                    "Approve & Pay"
+                  )}
                 </Button>
                 <Button
                   variant="outline"
                   className="w-full border-red-500/30 py-3 text-red-400 hover:bg-red-500/10"
+                  disabled={isProcessing}
+                  onClick={() => setShowDisputeModal(true)}
                 >
-                  Dispute
+                  {processing === "dispute" ? (
+                    <span className="flex items-center gap-2">
+                      <Spinner /> Filing Dispute...
+                    </span>
+                  ) : (
+                    "Dispute"
+                  )}
                 </Button>
               </>
             )}
@@ -286,6 +524,7 @@ export default function BountyDetailPage() {
               <Button
                 variant="outline"
                 className="w-full border-red-500/30 py-3 text-red-400 hover:bg-red-500/10"
+                disabled={isProcessing}
               >
                 Cancel Bounty
               </Button>
@@ -293,6 +532,103 @@ export default function BountyDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Submit Work Modal */}
+      <Dialog open={showSubmitWorkModal} onOpenChange={setShowSubmitWorkModal}>
+        <DialogContent className="border-white/[0.1] bg-[#0a1628] text-slate-200 sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-slate-100">Submit Work Result</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Enter your work result below. This can be an IPFS CID, a JSON payload,
+              or a text description of the completed work.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <Textarea
+              rows={6}
+              placeholder="Enter IPFS CID (e.g. bafybeig...) or paste your result as JSON/text..."
+              value={submitWorkResult}
+              onChange={(e) => setSubmitWorkResult(e.target.value)}
+              className="border-white/[0.08] bg-white/[0.03] text-slate-200 placeholder:text-slate-500"
+            />
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                className="border-white/[0.1] text-slate-300"
+                onClick={() => setShowSubmitWorkModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="btn-primary"
+                disabled={!submitWorkResult.trim() || isProcessing}
+                onClick={handleSubmitWork}
+              >
+                {processing === "submitWork" ? "Submitting..." : "Submit & Sign TX"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dispute Modal */}
+      <Dialog open={showDisputeModal} onOpenChange={setShowDisputeModal}>
+        <DialogContent className="border-white/[0.1] bg-[#0a1628] text-slate-200 sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-slate-100">File a Dispute</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Explain why the submitted work does not meet the bounty requirements.
+              This will be recorded on-chain.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <Textarea
+              rows={4}
+              placeholder="Describe the reason for disputing this submission..."
+              value={disputeReason}
+              onChange={(e) => setDisputeReason(e.target.value)}
+              className="border-white/[0.08] bg-white/[0.03] text-slate-200 placeholder:text-slate-500"
+            />
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                className="border-white/[0.1] text-slate-300"
+                onClick={() => setShowDisputeModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-red-600 hover:bg-red-700 text-white"
+                disabled={!disputeReason.trim() || isProcessing}
+                onClick={handleDispute}
+              >
+                {processing === "dispute" ? "Filing..." : "File Dispute & Sign TX"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+/** Small inline spinner for button loading states */
+function Spinner() {
+  return (
+    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+      />
+    </svg>
   );
 }
