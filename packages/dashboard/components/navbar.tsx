@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { Menu, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -246,6 +247,25 @@ export function Navbar() {
           <NotificationDropdown />
 
           <WalletConnectButton />
+
+          {/* Clerk auth */}
+          <SignedOut>
+            <SignInButton mode="modal">
+              <button className="glass rounded-lg px-4 py-2 text-sm font-medium text-slate-200 transition-colors hover:text-white hover:bg-white/[0.06]">
+                Sign In
+              </button>
+            </SignInButton>
+          </SignedOut>
+          <SignedIn>
+            <UserButton
+              afterSignOutUrl="/"
+              appearance={{
+                elements: {
+                  avatarBox: "h-8 w-8",
+                },
+              }}
+            />
+          </SignedIn>
 
           {/* Mobile hamburger */}
           <Sheet>

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Navbar } from "@/components/navbar";
@@ -116,12 +118,19 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-background font-sans antialiased">
-        <Providers>
-          <Navbar />
-          <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-            {children}
-          </main>
-        </Providers>
+        <ClerkProvider
+          appearance={{
+            baseTheme: dark,
+            variables: { colorPrimary: "#6366f1" },
+          }}
+        >
+          <Providers>
+            <Navbar />
+            <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+              {children}
+            </main>
+          </Providers>
+        </ClerkProvider>
       </body>
     </html>
   );

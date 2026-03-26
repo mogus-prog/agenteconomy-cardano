@@ -1,8 +1,29 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { createHash } from "node:crypto";
+import { verifyToken } from "@clerk/backend";
 import { eq } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { apiKeys } from "../db/schema.js";
+
+/**
+ * Verify a Clerk-issued JWT token.
+ * Returns the Clerk userId on success, or null if verification fails.
+ */
+export async function verifyClerkToken(
+  token: string,
+): Promise<{ userId: string } | null> {
+  try {
+    const payload = await verifyToken(token, {
+      secretKey: process.env.CLERK_SECRET_KEY,
+    });
+    if (payload.sub) {
+      return { userId: payload.sub };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 export interface AuthIdentity {
   type: "jwt" | "api_key";
@@ -76,11 +97,16 @@ export async function requireJwt(
     return;
   }
 
-  const _token = authHeader.slice(7);
-  // TODO: verify JWT with Clerk public key using jose
+  const token = authHeader.slice(7);
+  const result = await verifyClerkToken(token);
+  if (!result) {
+    reply.code(401).send({ error: "Invalid or expired JWT token" });
+    return;
+  }
+
   request.identity = {
     type: "jwt",
-    userId: "user_placeholder",
+    userId: result.userId,
   };
 }
 
@@ -88,6 +114,7 @@ export async function optionalAuth(
   request: FastifyRequest,
   _reply: FastifyReply,
 ): Promise<void> {
+  // Try API key auth first
   const apiKey = request.headers["x-api-key"];
   if (apiKey && typeof apiKey === "string") {
     const keyHash = hashApiKey(apiKey);
@@ -108,7 +135,21 @@ export async function optionalAuth(
           userId: keyRecord.userId ?? undefined,
           scopes: keyRecord.scopes ?? ["read", "write"],
         };
+        return;
       }
+    }
+  }
+
+  // Fall back to Clerk JWT auth
+  const authHeader = request.headers.authorization;
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7);
+    const result = await verifyClerkToken(token);
+    if (result) {
+      request.identity = {
+        type: "jwt",
+        userId: result.userId,
+      };
     }
   }
 }

@@ -9,6 +9,8 @@
     "test": "echo 'Dashboard: build check only' && next build"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.39.1",
+    "@clerk/themes": "^2.4.57",
     "@meshsdk/core": "^1.7.0",
     "@meshsdk/react": "^1.6.0",
     "@radix-ui/react-dialog": "^1.1.15",

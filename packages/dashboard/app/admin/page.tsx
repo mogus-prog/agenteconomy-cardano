@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAuth, SignInButton } from "@clerk/nextjs";
 import { useWalletStore } from "@/lib/store";
 import { useBountyStats } from "@/lib/queries";
 import { config } from "@/lib/config";
@@ -67,6 +68,7 @@ const ACTIVITY_STYLES: Record<string, string> = {
 };
 
 export default function AdminPage() {
+  const { isSignedIn, isLoaded: clerkLoaded } = useAuth();
   const { connected, address } = useWalletStore();
   const { data: stats, isLoading: loadingStats } = useBountyStats();
   const [health, setHealth] = useState<HealthStatus>({
@@ -108,6 +110,24 @@ export default function AdminPage() {
     checkHealth();
   }, []);
 
+  // Require Clerk authentication first
+  if (clerkLoaded && !isSignedIn) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="glass max-w-md rounded-xl p-10 text-center">
+          <h2 className="mb-2 text-xl font-bold text-white">Sign In Required</h2>
+          <p className="mb-6 text-sm text-muted-foreground">
+            Sign in with your account to access the admin panel.
+          </p>
+          <SignInButton mode="modal">
+            <Button className="btn-primary px-6 py-2.5">Sign In</Button>
+          </SignInButton>
+        </div>
+      </div>
+    );
+  }
+
+  // Then require wallet connection
   if (!connected || !address) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
