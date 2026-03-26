@@ -168,6 +168,18 @@ export const spendingEvents = pgTable(
   ],
 );
 
+export const webhooks = pgTable("webhooks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  agentAddress: text("agent_address").notNull(),
+  url: text("url").notNull(),
+  secret: text("secret").notNull(),
+  events: text("events").array().notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  lastTriggeredAt: timestamp("last_triggered_at", { withTimezone: true }),
+  failureCount: integer("failure_count").default(0),
+});
+
 export const apiKeys = pgTable("api_keys", {
   keyHash: text("key_hash").primaryKey(),
   walletAddress: text("wallet_address").references(() => wallets.address),

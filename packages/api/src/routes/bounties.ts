@@ -7,6 +7,7 @@ import { db } from "../db/index.js";
 import { bounties, transactions, disputes } from "../db/schema.js";
 import { submitTx } from "../services/blockfrost.js";
 import { fetchFromIPFS } from "../services/ipfs.js";
+import { dispatchWebhookEvent } from "../services/webhookDispatcher.js";
 
 // ---------------------------------------------------------------------------
 // Placeholder Zod schemas — replace with full definitions as the domain matures
@@ -115,6 +116,15 @@ type CancelBody = z.infer<typeof CancelBodySchema>;
 // ---------------------------------------------------------------------------
 
 function serializeBounty(row: typeof bounties.$inferSelect) {
+  let resultSchema = null;
+  if (row.resultSchemaIpfs) {
+    try {
+      resultSchema = JSON.parse(row.resultSchemaIpfs);
+    } catch {
+      // Not valid JSON — leave as null
+    }
+  }
+
   return {
     ...row,
     rewardLovelace: row.rewardLovelace.toString(),
@@ -128,6 +138,7 @@ function serializeBounty(row: typeof bounties.$inferSelect) {
     submittedAt: row.submittedAt?.toISOString() ?? null,
     completedAt: row.completedAt?.toISOString() ?? null,
     updatedAt: row.updatedAt?.toISOString() ?? null,
+    resultSchema,
   };
 }
 
@@ -483,6 +494,18 @@ export default async function bountiesRoutes(fastify: FastifyInstance): Promise<
     difficulty: z.string().optional(),
     verificationType: z.string().optional(),
     posterAddress: z.string(),
+    resultSchema: z
+      .object({
+        type: z.literal("object"),
+        required: z.array(z.string()),
+        properties: z.record(
+          z.object({
+            type: z.string(),
+            description: z.string(),
+          })
+        ),
+      })
+      .optional(),
   });
 
   fastify.post(
@@ -509,8 +532,21 @@ export default async function bountiesRoutes(fastify: FastifyInstance): Promise<
           status: "open",
           tags: body.tags ?? [],
           postTxHash: body.txHash,
+          resultSchemaIpfs: body.resultSchema
+            ? JSON.stringify(body.resultSchema)
+            : null,
         })
         .onConflictDoNothing();
+
+      // Fire-and-forget webhook dispatch
+      dispatchWebhookEvent("bounty:new", {
+        txHash: body.txHash,
+        title: body.title,
+        category: body.category ?? "general",
+        rewardLovelace: body.rewardLovelace,
+        posterAddress: body.posterAddress,
+        deadline: body.deadline,
+      }).catch(() => {});
 
       return reply.status(201).send({
         txHash: body.txHash,
@@ -544,6 +580,25 @@ export default async function bountiesRoutes(fastify: FastifyInstance): Promise<
       if (body.txHash) updates.claimTxHash = body.txHash;
 
       await db.update(bounties).set(updates).where(eq(bounties.id, id));
+
+      // Fire-and-forget webhook dispatch for status changes
+      const statusEventMap: Record<string, string> = {
+        claimed: "bounty:claimed",
+        submitted: "bounty:submitted",
+        completed: "bounty:completed",
+        disputed: "bounty:disputed",
+        refunded: "bounty:refunded",
+        cancelled: "bounty:cancelled",
+      };
+      const webhookEvent = statusEventMap[body.status];
+      if (webhookEvent) {
+        dispatchWebhookEvent(webhookEvent, {
+          bountyId: id,
+          status: body.status,
+          agentAddress: body.agentAddress ?? null,
+          txHash: body.txHash ?? null,
+        }).catch(() => {});
+      }
 
       return reply.status(200).send({ id, ...updates });
     },

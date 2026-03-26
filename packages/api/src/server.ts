@@ -7,6 +7,7 @@ import bountyRoutes from "./routes/bounties.js";
 import walletRoutes from "./routes/wallets.js";
 import agentRoutes from "./routes/agents.js";
 import oracleRoutes from "./routes/oracle.js";
+import webhookRoutes from "./routes/webhooks.js";
 import errorHandlerPlugin from "./middleware/errorHandler.js";
 
 import { startDeadlineMonitor } from "./workers/deadlineMonitor.js";
@@ -34,6 +35,7 @@ async function buildServer() {
   await fastify.register(walletRoutes);
   await fastify.register(agentRoutes);
   await fastify.register(oracleRoutes);
+  await fastify.register(webhookRoutes);
 
   return fastify;
 }

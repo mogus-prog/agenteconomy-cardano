@@ -12,8 +12,10 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { BountyCategory, Difficulty, VerificationType } from "@/lib/types";
+import { BOUNTY_TEMPLATES, type BountyTemplate, type ResultSchema } from "@/lib/bounty-templates";
 
 const CATEGORIES: BountyCategory[] = [
   "DataExtraction",
@@ -44,6 +46,95 @@ interface FormData {
   difficulty: Difficulty;
   verificationType: VerificationType;
   disputeWindowMinutes: string;
+  resultSchema: ResultSchema | null;
+}
+
+const CATEGORY_ICONS: Record<string, string> = {
+  DataExtraction: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4",
+  CodeGen: "M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4",
+  Research: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z",
+  Content: "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z",
+  OnChain: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
+  Translation: "M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129",
+  Moderation: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z",
+};
+
+function TemplateSelector({
+  onSelect,
+  selectedTemplateId,
+}: {
+  onSelect: (template: BountyTemplate | null) => void;
+  selectedTemplateId: string | null;
+}) {
+  return (
+    <div className="mb-6">
+      <label className="mb-3 block text-sm font-medium text-slate-300">
+        Start from a template
+      </label>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {BOUNTY_TEMPLATES.map((template) => (
+          <button
+            key={template.id}
+            type="button"
+            onClick={() =>
+              onSelect(selectedTemplateId === template.id ? null : template)
+            }
+            className={`group glass rounded-xl p-4 text-left transition-all ${
+              selectedTemplateId === template.id
+                ? "border-indigo-500/40 bg-indigo-500/5 ring-1 ring-indigo-500/30"
+                : "hover:border-white/[0.12] hover:bg-white/[0.02]"
+            }`}
+          >
+            <div className="mb-2 flex items-center gap-2">
+              <svg
+                className={`h-4 w-4 shrink-0 ${
+                  selectedTemplateId === template.id
+                    ? "text-indigo-400"
+                    : "text-slate-500 group-hover:text-slate-400"
+                }`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d={CATEGORY_ICONS[template.category] ?? CATEGORY_ICONS.CodeGen}
+                />
+              </svg>
+              <span className="text-sm font-medium text-slate-200">
+                {template.name}
+              </span>
+            </div>
+            <p className="mb-2 text-xs leading-relaxed text-muted-foreground">
+              {template.description}
+            </p>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="secondary"
+                className="bg-indigo-500/10 text-indigo-400 border-indigo-500/20 text-[10px]"
+              >
+                {template.category}
+              </Badge>
+              <span className="font-mono text-xs text-amber-400">
+                ~{template.suggestedReward} ADA
+              </span>
+            </div>
+          </button>
+        ))}
+      </div>
+      {selectedTemplateId && (
+        <button
+          type="button"
+          onClick={() => onSelect(null)}
+          className="mt-3 text-xs text-slate-400 hover:text-slate-300 underline underline-offset-2"
+        >
+          Clear template and start from scratch
+        </button>
+      )}
+    </div>
+  );
 }
 
 function StepIndicator({ current }: { current: number }) {
@@ -100,6 +191,7 @@ export default function PostBountyPage() {
   const [errors, setErrors] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
   const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
   const [form, setForm] = useState<FormData>({
     title: "",
@@ -111,7 +203,40 @@ export default function PostBountyPage() {
     difficulty: "medium",
     verificationType: "Optimistic",
     disputeWindowMinutes: "60",
+    resultSchema: null,
   });
+
+  const applyTemplate = useCallback((template: BountyTemplate | null) => {
+    if (!template) {
+      setSelectedTemplateId(null);
+      setForm({
+        title: "",
+        description: "",
+        category: "DataExtraction",
+        tags: "",
+        rewardAda: "",
+        deadline: "",
+        difficulty: "medium",
+        verificationType: "Optimistic",
+        disputeWindowMinutes: "60",
+        resultSchema: null,
+      });
+      setErrors({});
+      return;
+    }
+    setSelectedTemplateId(template.id);
+    setForm((prev) => ({
+      ...prev,
+      title: template.name,
+      description: template.descriptionTemplate,
+      category: template.category,
+      tags: template.tags.join(", "),
+      rewardAda: String(template.suggestedReward),
+      difficulty: template.difficulty,
+      resultSchema: template.resultSchema,
+    }));
+    setErrors({});
+  }, []);
 
   const update = useCallback(
     <K extends keyof FormData>(key: K, value: FormData[K]) => {
@@ -210,6 +335,7 @@ export default function PostBountyPage() {
             difficulty: form.difficulty.toLowerCase(),
             verificationType: form.verificationType,
             posterAddress: address,
+            ...(form.resultSchema ? { resultSchema: form.resultSchema } : {}),
           }),
         });
       } catch {
@@ -288,6 +414,11 @@ export default function PostBountyPage() {
         {/* Step 1 — Task Details */}
         {step === 1 && (
           <div className="space-y-5">
+            <TemplateSelector
+              onSelect={applyTemplate}
+              selectedTemplateId={selectedTemplateId}
+            />
+            <div className="h-px bg-white/[0.06]" />
             <div>
               <label className={labelClass}>Bounty Title *</label>
               <Input
@@ -520,6 +651,42 @@ export default function PostBountyPage() {
                 </span>
               </div>
             ))}
+
+            {form.resultSchema && (
+              <div className="glass rounded-xl p-4">
+                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  Expected Result Schema
+                </h4>
+                <div className="space-y-1.5">
+                  {Object.entries(form.resultSchema.properties).map(
+                    ([field, prop]) => (
+                      <div
+                        key={field}
+                        className="flex items-start gap-2 text-xs"
+                      >
+                        <span
+                          className={`font-mono font-medium ${
+                            form.resultSchema!.required.includes(field)
+                              ? "text-indigo-400"
+                              : "text-slate-400"
+                          }`}
+                        >
+                          {field}
+                          {form.resultSchema!.required.includes(field) && (
+                            <span className="text-red-400">*</span>
+                          )}
+                        </span>
+                        <span className="text-slate-600">:</span>
+                        <span className="text-slate-500">{prop.type}</span>
+                        <span className="text-muted-foreground">
+                          &mdash; {prop.description}
+                        </span>
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4 text-sm text-indigo-300">
               By publishing, you agree to lock{" "}

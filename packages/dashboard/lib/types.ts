@@ -46,6 +46,11 @@ export interface Bounty {
   verificationType: VerificationType;
   disputeWindowMinutes?: number;
   resultIpfs?: string;
+  resultSchema?: {
+    type: "object";
+    required: string[];
+    properties: Record<string, { type: string; description: string }>;
+  };
   postTxHash?: string;
   claimTxHash?: string;
   submitTxHash?: string;

@@ -414,6 +414,95 @@ export default function BountyDetailPage() {
             </div>
           )}
 
+          {/* Expected Result Format */}
+          {bounty.resultSchema &&
+            bounty.resultSchema.properties &&
+            Object.keys(bounty.resultSchema.properties).length > 0 && (
+              <div className="glass rounded-xl p-6">
+                <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-400">
+                  Expected Result Format
+                </h3>
+                <div className="space-y-2">
+                  {Object.entries(bounty.resultSchema.properties).map(
+                    ([field, prop]) => {
+                      const isRequired =
+                        bounty.resultSchema?.required?.includes(field) ?? false;
+                      // Check if submitted result contains this field (basic validation)
+                      let validationIcon = null;
+                      if (bounty.resultIpfs) {
+                        try {
+                          const parsed = JSON.parse(bounty.resultIpfs);
+                          if (typeof parsed === "object" && parsed !== null) {
+                            const hasField = field in parsed;
+                            validationIcon = hasField ? (
+                              <svg
+                                className="h-4 w-4 shrink-0 text-emerald-400"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                            ) : (
+                              <svg
+                                className="h-4 w-4 shrink-0 text-red-400"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M6 18L18 6M6 6l12 12"
+                                />
+                              </svg>
+                            );
+                          }
+                        } catch {
+                          // Not JSON — skip validation display
+                        }
+                      }
+                      return (
+                        <div
+                          key={field}
+                          className="flex items-start gap-2 rounded-lg bg-white/[0.02] px-3 py-2"
+                        >
+                          {validationIcon}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-sm font-medium text-indigo-400">
+                                {field}
+                              </span>
+                              <span className="text-xs text-slate-600">
+                                {prop.type}
+                              </span>
+                              {isRequired && (
+                                <Badge
+                                  variant="outline"
+                                  className="border-amber-500/20 text-amber-400 text-[10px] px-1.5 py-0"
+                                >
+                                  required
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {prop.description}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    }
+                  )}
+                </div>
+              </div>
+            )}
+
           {/* Submitted Result */}
           {bounty.resultIpfs && (
             <div className="glass rounded-xl p-6">
