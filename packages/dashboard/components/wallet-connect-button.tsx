@@ -23,8 +23,8 @@ import { truncateAddress, cardanoscanUrl } from "@/lib/utils";
 import { toast } from "sonner";
 
 const WALLETS = [
-  { name: "eternl", label: "Eternl" },
   { name: "lace", label: "Lace" },
+  { name: "eternl", label: "Eternl" },
   { name: "nami", label: "Nami" },
   { name: "vespr", label: "Vespr" },
 ] as const;
@@ -33,15 +33,52 @@ export function WalletConnectButton() {
   const { connected, address, walletName, setWallet, disconnect } =
     useWalletStore();
   const [open, setOpen] = useState(false);
+  const [connecting, setConnecting] = useState<string | null>(null);
 
   async function handleConnect(name: string) {
-    // Simulate wallet connection for now
-    // Real MeshJS integration will be added when testing with browser wallets
-    const stubAddress =
-      "addr_test1qz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3jcu5d8ps7zex2k2xt3uqxgjqnnj83ws8lhrn648jjxtwq2ytjc7";
-    setWallet(stubAddress, name);
-    setOpen(false);
-    toast.success(`Connected with ${name}`);
+    setConnecting(name);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const cardano = (window as any).cardano;
+      if (!cardano?.[name]) {
+        toast.error(`${name} wallet not found`, {
+          description: "Please install the browser extension and reload.",
+        });
+        return;
+      }
+
+      // Enable the wallet via CIP-30
+      const api = await cardano[name].enable();
+
+      // Get the wallet's used addresses (hex-encoded)
+      const hexAddresses: string[] = await api.getUsedAddresses();
+      if (!hexAddresses || hexAddresses.length === 0) {
+        // Try change address as fallback
+        const changeAddr: string = await api.getChangeAddress();
+        if (!changeAddr) {
+          toast.error("No addresses found in wallet");
+          return;
+        }
+        // Convert hex to bech32 using the CSL if available, or use a helper
+        const bech32Addr = await hexToBech32(changeAddr);
+        setWallet(bech32Addr, name);
+      } else {
+        const bech32Addr = await hexToBech32(hexAddresses[0]);
+        setWallet(bech32Addr, name);
+      }
+
+      setOpen(false);
+      toast.success(`Connected with ${name}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("refused") || msg.includes("cancelled") || msg.includes("User declined")) {
+        toast.error("Connection cancelled");
+      } else {
+        toast.error("Failed to connect wallet", { description: msg });
+      }
+    } finally {
+      setConnecting(null);
+    }
   }
 
   function handleCopy() {
@@ -115,21 +152,70 @@ export function WalletConnectButton() {
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3 py-4">
-          {WALLETS.map((w) => (
-            <Button
-              key={w.name}
-              variant="outline"
-              className="justify-start gap-3 border-white/[0.08] bg-white/[0.02] py-6 text-left hover:bg-white/[0.06] hover:border-white/[0.15]"
-              onClick={() => handleConnect(w.name)}
-            >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06]">
-                <Wallet className="h-4 w-4 text-indigo-400" />
-              </div>
-              <span className="text-sm font-medium">{w.label}</span>
-            </Button>
-          ))}
+          {WALLETS.map((w) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const available = typeof window !== "undefined" && !!(window as any).cardano?.[w.name];
+            return (
+              <Button
+                key={w.name}
+                variant="outline"
+                className="justify-start gap-3 border-white/[0.08] bg-white/[0.02] py-6 text-left hover:bg-white/[0.06] hover:border-white/[0.15] disabled:opacity-40"
+                onClick={() => handleConnect(w.name)}
+                disabled={!available || connecting !== null}
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06]">
+                  <Wallet className="h-4 w-4 text-indigo-400" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">{w.label}</span>
+                  {!available && (
+                    <span className="text-xs text-muted-foreground">Not installed</span>
+                  )}
+                </div>
+                {connecting === w.name && (
+                  <span className="ml-auto text-xs text-muted-foreground animate-pulse">
+                    Connecting...
+                  </span>
+                )}
+              </Button>
+            );
+          })}
         </div>
       </DialogContent>
     </Dialog>
   );
+}
+
+/**
+ * Convert a hex-encoded Cardano address to bech32 (addr_test1... or addr1...).
+ * Uses a lightweight approach without requiring full CSL.
+ */
+async function hexToBech32(hex: string): Promise<string> {
+  // Try using the CardanoWasm if available via MeshJS
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const CSL = (window as any).CardanoSerializationLib;
+    if (CSL) {
+      const addr = CSL.Address.from_bytes(Buffer.from(hex, "hex"));
+      return addr.to_bech32();
+    }
+  } catch {
+    // fallback below
+  }
+
+  // Use the bech32 encoding directly
+  // Cardano addresses: network byte 0x00 = testnet, 0x01 = mainnet
+  // The CIP-30 getUsedAddresses returns hex CBOR, we need to convert
+  try {
+    const { bech32 } = await import("bech32");
+    const bytes = new Uint8Array(hex.match(/.{1,2}/g)!.map(b => parseInt(b, 16)));
+    const networkByte = bytes[0] & 0x0f;
+    const prefix = networkByte === 0 ? "addr_test" : "addr";
+    const words = bech32.toWords(bytes);
+    return bech32.encode(prefix, words, 200);
+  } catch {
+    // Last resort: return the hex prefixed so we know it's not bech32
+    // The API should still work with hex addresses
+    return hex;
+  }
 }
