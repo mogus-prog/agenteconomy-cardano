@@ -196,7 +196,8 @@ export default function PostBountyPage() {
       // Step 3: Submit signed transaction
       toast.info("Submitting transaction to the blockchain...");
       const submitResult = await submitBounty.mutateAsync({
-        signedTxCbor: signedTx,
+        signedTx: signedTx,
+        posterAddress: address,
       });
 
       const txHash = submitResult.txHash ?? "submitted";
@@ -212,8 +213,9 @@ export default function PostBountyPage() {
       const msg = err instanceof Error ? err.message : "Unknown error";
       if (msg.includes("User declined") || msg.includes("cancelled")) {
         toast.error("Transaction cancelled by user");
+      } else {
+        toast.error("Transaction failed", { description: msg });
       }
-      // Other errors handled by react-query onError
     } finally {
       setSubmitting(false);
     }

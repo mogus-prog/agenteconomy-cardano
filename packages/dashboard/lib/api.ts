@@ -160,7 +160,7 @@ export function buildPostBounty(params: {
   });
 }
 
-export function submitPostBounty(params: { signedTxCbor: string }) {
+export function submitPostBounty(params: { signedTx: string; posterAddress: string }) {
   return apiFetch<SubmitTxResponse>("/bounties/submit-post", {
     method: "POST",
     body: params,

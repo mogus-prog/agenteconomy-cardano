@@ -61,7 +61,7 @@ export function usePostBounty() {
 export function useSubmitPostBounty() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (params: { signedTxCbor: string }) => submitPostBounty(params),
+    mutationFn: (params: { signedTx: string; posterAddress: string }) => submitPostBounty(params),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["bounties"] });
       qc.invalidateQueries({ queryKey: ["bountyStats"] });
