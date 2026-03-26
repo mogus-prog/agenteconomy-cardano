@@ -193,14 +193,9 @@ export default function PostBountyPage() {
       const wallet = await cardanoApi.enable();
       const signedTx = await wallet.signTx(buildResult.unsignedTxCbor);
 
-      // Step 3: Submit signed transaction
+      // Step 3: Submit signed transaction directly via wallet (CIP-30)
       toast.info("Submitting transaction to the blockchain...");
-      const submitResult = await submitBounty.mutateAsync({
-        signedTx: signedTx,
-        posterAddress: address,
-      });
-
-      const txHash = submitResult.txHash ?? "submitted";
+      const txHash = await wallet.submitTx(signedTx);
       setSuccessTxHash(txHash);
       toast.success("Bounty posted on-chain!", {
         description: `TX: ${txHash.slice(0, 16)}...`,
