@@ -5,6 +5,7 @@
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
+    "postinstall": "node -e \"const fs=require('fs'),p='node_modules/libsodium-wrappers-sumo/dist/modules-sumo-esm/libsodium-sumo.mjs',s='node_modules/libsodium-sumo/dist/modules-sumo-esm/libsodium-sumo.mjs';try{if(!fs.existsSync(p)&&fs.existsSync(s)){fs.copyFileSync(s,p);console.log('Patched libsodium ESM')}}catch(e){console.log('libsodium patch skipped:',e.message)}\"",
     "build": "tsc",
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
