@@ -191,7 +191,7 @@ export default function PostBountyPage() {
         throw new Error(`Wallet "${walletName}" not found. Is the extension installed?`);
       }
       const wallet = await cardanoApi.enable();
-      const signedTx = await wallet.signTx(buildResult.unsignedTxCbor, true);
+      const signedTx = await wallet.signTx(buildResult.unsignedTxCbor);
 
       // Step 3: Submit signed transaction
       toast.info("Submitting transaction to the blockchain...");
