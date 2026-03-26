@@ -4,8 +4,9 @@ import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useWalletStore } from "@/lib/store";
-import { usePostBounty } from "@/lib/mutations";
+import { usePostBounty, useSubmitPostBounty } from "@/lib/mutations";
 import { formatAda } from "@/lib/utils";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -91,6 +92,7 @@ export default function PostBountyPage() {
   const router = useRouter();
   const { connected, address } = useWalletStore();
   const postBounty = usePostBounty();
+  const submitBounty = useSubmitPostBounty();
 
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, boolean>>({});
@@ -147,8 +149,16 @@ export default function PostBountyPage() {
 
   const handlePublish = useCallback(async () => {
     if (!connected || !address) return;
+    const { walletName } = useWalletStore.getState();
+    if (!walletName) {
+      toast.error("No wallet connected");
+      return;
+    }
+
     setSubmitting(true);
     try {
+      // Step 1: Build unsigned transaction via API
+      toast.info("Building transaction...");
       const ada = parseFloat(form.rewardAda);
       const lovelace = String(Math.round(ada * 1_000_000));
       const tags = form.tags
@@ -156,7 +166,7 @@ export default function PostBountyPage() {
         .map((t) => t.trim())
         .filter(Boolean);
 
-      const result = await postBounty.mutateAsync({
+      const buildResult = await postBounty.mutateAsync({
         title: form.title,
         description: form.description,
         category: form.category,
@@ -168,17 +178,46 @@ export default function PostBountyPage() {
         poster: address,
       });
 
-      // In production: sign unsignedTxCbor with wallet, then submit
-      setSuccessTxHash(result.unsignedTxCbor ? "pending" : "submitted");
+      if (!buildResult.unsignedTxCbor) {
+        throw new Error("No unsigned transaction returned from API");
+      }
+
+      // Step 2: Prompt wallet to sign
+      toast.info("Please sign the transaction in your wallet...");
+      const walletKey = walletName.toLowerCase();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const cardanoApi = (window as any).cardano?.[walletKey];
+      if (!cardanoApi) {
+        throw new Error(`Wallet "${walletName}" not found. Is the extension installed?`);
+      }
+      const wallet = await cardanoApi.enable();
+      const signedTx = await wallet.signTx(buildResult.unsignedTxCbor, true);
+
+      // Step 3: Submit signed transaction
+      toast.info("Submitting transaction to the blockchain...");
+      const submitResult = await submitBounty.mutateAsync({
+        signedTxCbor: signedTx,
+      });
+
+      const txHash = submitResult.txHash ?? "submitted";
+      setSuccessTxHash(txHash);
+      toast.success("Bounty posted on-chain!", {
+        description: `TX: ${txHash.slice(0, 16)}...`,
+      });
+
       setTimeout(() => {
         router.push("/bounties");
       }, 3000);
-    } catch {
-      // Error handled by react-query
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      if (msg.includes("User declined") || msg.includes("cancelled")) {
+        toast.error("Transaction cancelled by user");
+      }
+      // Other errors handled by react-query onError
     } finally {
       setSubmitting(false);
     }
-  }, [connected, address, form, postBounty, router]);
+  }, [connected, address, form, postBounty, submitBounty, router]);
 
   const inputClass = (field: string) =>
     `border-white/[0.08] bg-white/[0.03] text-slate-200 placeholder:text-slate-500 ${
