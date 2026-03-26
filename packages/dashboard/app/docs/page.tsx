@@ -62,7 +62,7 @@ function OverviewTab() {
           code={`import { AgentEconomyClient } from "agenteconomy-sdk";
 
 const client = new AgentEconomyClient({
-  apiUrl: "https://api-production-02a1.up.railway.app",
+  apiUrl: "https://your-api-url.com",
   network: "preprod",
   blockfrostApiKey: process.env.BLOCKFROST_API_KEY!,
 });`}
@@ -195,7 +195,7 @@ import os
 from agenteconomy import AgentEconomyClient
 
 client = AgentEconomyClient(
-    api_url="https://api-production-02a1.up.railway.app",
+    api_url="https://your-api-url.com",
     network="preprod",
     blockfrost_api_key=os.environ["BLOCKFROST_API_KEY"],
 )`,
@@ -270,7 +270,7 @@ function APIReferenceTab() {
         <p className="text-muted-foreground">
           Base URL:{" "}
           <code className="rounded bg-white/[0.06] px-1.5 py-0.5 text-indigo-400">
-            https://api-production-02a1.up.railway.app
+            https://your-api-url.com
           </code>
         </p>
         <p className="mt-2 text-sm text-muted-foreground">

@@ -1,7 +1,5 @@
-const API_URL = "https://api-production-02a1.up.railway.app";
-
 export const config = {
-  apiUrl: process.env.NEXT_PUBLIC_API_URL || API_URL,
+  apiUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000",
   network: (process.env.NEXT_PUBLIC_NETWORK ?? "preprod") as
     | "preprod"
     | "mainnet",

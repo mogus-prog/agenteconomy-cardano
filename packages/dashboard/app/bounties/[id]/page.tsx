@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { config } from "@/lib/config";
 import { useBounty } from "@/lib/queries";
 import { useWalletStore } from "@/lib/store";
 import { formatAda, cardanoscanUrl, truncateAddress } from "@/lib/utils";
@@ -30,7 +31,7 @@ import {
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
-const API_BASE = "https://api-production-02a1.up.railway.app";
+const API_BASE = config.apiUrl;
 
 function LoadingSkeleton() {
   return (
@@ -286,7 +287,7 @@ export default function BountyDetailPage() {
       // On-chain tx build failed — update DB status directly
       try {
         toast.info("Recording approval...");
-        const res = await fetch(`https://api-production-02a1.up.railway.app/v1/bounties/${params.id}/status`, {
+        const res = await fetch(`${config.apiUrl}/v1/bounties/${params.id}/status`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status: "completed" }),

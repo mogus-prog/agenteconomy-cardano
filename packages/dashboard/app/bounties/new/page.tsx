@@ -7,6 +7,7 @@ import { useWalletStore } from "@/lib/store";
 import { usePostBounty, useSubmitPostBounty } from "@/lib/mutations";
 import { formatAda } from "@/lib/utils";
 import { assembleSignedTx, enableWallet } from "@/lib/tx-utils";
+import { config } from "@/lib/config";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -195,7 +196,7 @@ export default function PostBountyPage() {
 
       // Step 4: Record bounty in database (fire-and-forget, don't block on failure)
       try {
-        await fetch("https://api-production-02a1.up.railway.app/v1/bounties/record", {
+        await fetch(`${config.apiUrl}/v1/bounties/record`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

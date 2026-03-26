@@ -27,7 +27,8 @@ export async function apiFetch<T>(
   path: string,
   options?: FetchOptions
 ): Promise<T> {
-  const url = `https://api-production-02a1.up.railway.app/v1${path}`;
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+  const url = `${baseUrl}/v1${path}`;
   const res = await fetch(url, {
     method: options?.method ?? "GET",
     headers: {
