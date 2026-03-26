@@ -1,5 +1,5 @@
 /**
- * AgentEconomy E2E Validation Test on Cardano Preprod
+ * BotBrained.ai E2E Validation Test on Cardano Preprod
  *
  * This script runs the 7-step E2E test from the spec:
  * 1. Create a new agent wallet via SDK
@@ -36,7 +36,7 @@ async function step(n: number, name: string, fn: () => Promise<void>): Promise<v
 }
 
 async function main() {
-  console.log("🚀 AgentEconomy E2E Validation Test — Cardano Preprod");
+  console.log("🚀 BotBrained.ai E2E Validation Test — Cardano Preprod");
   console.log(`API: ${API_URL}`);
   console.log(`Network: ${NETWORK}`);
 
@@ -188,7 +188,7 @@ async function main() {
     console.log(`  Policy compliance: ${JSON.stringify(compliance)}`);
 
     // Test message signing
-    const sig = await agentWallet.signMessage({ message: "Hello AgentEconomy!" });
+    const sig = await agentWallet.signMessage({ message: "Hello BotBrained.ai!" });
     console.log(`  Message signed: ${sig.signature.slice(0, 30)}...`);
     console.log(`  Public key: ${sig.pubKey.slice(0, 30)}...`);
   });

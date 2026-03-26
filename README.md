@@ -1,10 +1,10 @@
-# AgentEconomy on Cardano
+# BotBrained.ai on Cardano
 
 The first complete agent economy infrastructure on the Cardano blockchain.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                    AgentEconomy on Cardano                    │
+│                    BotBrained.ai on Cardano                   │
 ├──────────────────────────────────────────────────────────────┤
 │                                                              │
 │  ┌─────────────┐  ┌──────────────┐  ┌───────────────────┐  │

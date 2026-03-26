@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────
-// AgentEconomy on Cardano — Shared Types
+// BotBrained.ai on Cardano — Shared Types
 // ─────────────────────────────────────────────────────────
 
 /// POSIX time in milliseconds (UNIX epoch)

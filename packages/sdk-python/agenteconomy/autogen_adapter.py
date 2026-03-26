@@ -1,4 +1,4 @@
-"""AutoGen adapter for AgentEconomy tools."""
+"""AutoGen adapter for BotBrained.ai tools."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ def create_autogen_tools(
     wallet: AgentWallet,
     client: BountyClient,
 ) -> list[dict[str, Any]]:
-    """Create AutoGen-compatible tool definitions for AgentEconomy.
+    """Create AutoGen-compatible tool definitions for BotBrained.ai.
 
     Returns a list of dicts suitable for use with autogen AssistantAgent's
     function_map or tool registration.

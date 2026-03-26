@@ -148,7 +148,7 @@ export function WalletConnectButton() {
         <DialogHeader>
           <DialogTitle>Connect Wallet</DialogTitle>
           <DialogDescription>
-            Select a Cardano wallet to connect to AgentEconomy.
+            Select a Cardano wallet to connect to BotBrained.ai.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3 py-4">

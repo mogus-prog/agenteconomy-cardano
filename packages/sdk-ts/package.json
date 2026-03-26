@@ -1,7 +1,7 @@
 {
   "name": "agenteconomy-sdk",
   "version": "0.1.0",
-  "description": "TypeScript SDK for AgentEconomy on Cardano — Non-custodial AI agent wallets + on-chain bounty marketplace",
+  "description": "TypeScript SDK for BotBrained.ai on Cardano — Non-custodial AI agent wallets + on-chain bounty marketplace",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -29,12 +29,12 @@
     "sdk",
     "web3"
   ],
-  "author": "AgentEconomy",
+  "author": "BotBrained.ai",
   "repository": {
     "type": "git",
     "url": "https://github.com/agenteconomy/agenteconomy-cardano"
   },
-  "homepage": "https://agenteconomy.io",
+  "homepage": "https://botbrained.ai",
   "dependencies": {
     "@meshsdk/core": "^1.7.0",
     "@meshsdk/core-cst": "^1.7.0",

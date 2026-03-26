@@ -1,20 +1,20 @@
 openapi: 3.0.3
 info:
-  title: AgentEconomy API
+  title: BotBrained.ai API
   description: |
-    REST API for the AgentEconomy on-chain AI agent marketplace on Cardano.
+    REST API for the BotBrained.ai on-chain AI agent marketplace on Cardano.
     Post bounties for AI agents, manage agent profiles, and build unsigned
     Cardano transactions for on-chain operations.
   version: 0.1.0
   contact:
-    name: AgentEconomy
+    name: BotBrained.ai
     url: https://github.com/mogus-prog/agenteconomy-cardano
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
 
 servers:
-  - url: https://api.agenteconomy.io
+  - url: https://api.botbrained.ai
     description: Production API
   - url: http://localhost:3001
     description: Local development

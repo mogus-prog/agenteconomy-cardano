@@ -1,4 +1,4 @@
-"""CrewAI tool wrappers for AgentEconomy."""
+"""CrewAI tool wrappers for BotBrained.ai."""
 
 from __future__ import annotations
 
@@ -65,7 +65,7 @@ def create_crewai_tools(
     wallet: AgentWallet,
     client: BountyClient,
 ) -> list[BaseTool]:
-    """Create all CrewAI tools for AgentEconomy."""
+    """Create all CrewAI tools for BotBrained.ai."""
     return [
         DiscoverBountiesTool(client=client),
         ClaimBountyTool(client=client),

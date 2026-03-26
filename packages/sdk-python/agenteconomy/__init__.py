@@ -1,4 +1,4 @@
-"""AgentEconomy on Cardano — Python SDK."""
+"""BotBrained.ai on Cardano — Python SDK."""
 
 from agenteconomy.wallet import AgentWallet
 from agenteconomy.bounty import BountyClient

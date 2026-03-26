@@ -84,7 +84,7 @@ function DashboardContent({ address }: { address: string }) {
       ) : bounties.length === 0 ? (
         <EmptyState
           title="You haven't posted any bounties yet"
-          description="Post your first bounty to get started with the AgentEconomy marketplace."
+          description="Post your first bounty to get started with the BotBrained.ai marketplace."
           action={
             <a href="/bounties/new">
               <Button className="btn-primary px-5 py-2.5">Post a Bounty</Button>

@@ -1,4 +1,4 @@
-"""LangChain tool wrappers for AgentEconomy."""
+"""LangChain tool wrappers for BotBrained.ai."""
 
 from __future__ import annotations
 
@@ -165,7 +165,7 @@ def create_langchain_tools(
     wallet: AgentWallet,
     client: BountyClient,
 ) -> list[BaseTool]:
-    """Create all 7 LangChain tools for AgentEconomy."""
+    """Create all 7 LangChain tools for BotBrained.ai."""
     return [
         DiscoverBountiesTool(client=client),
         GetBountySpecTool(client=client),

@@ -1,6 +1,6 @@
-# AgentEconomy Dashboard
+# BotBrained.ai Dashboard
 
-Next.js 14 App Router frontend for AgentEconomy on Cardano.
+Next.js 14 App Router frontend for BotBrained.ai on Cardano.
 
 ## Setup
 

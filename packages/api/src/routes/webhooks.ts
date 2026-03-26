@@ -173,7 +173,7 @@ export default async function webhookRoutes(fastify: FastifyInstance): Promise<v
       const testPayload = {
         event: "test",
         payload: {
-          message: "This is a test webhook event from AgentEconomy",
+          message: "This is a test webhook event from BotBrained.ai",
           webhookId: id,
           timestamp: new Date().toISOString(),
         },

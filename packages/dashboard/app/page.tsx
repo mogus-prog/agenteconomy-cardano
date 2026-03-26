@@ -17,7 +17,7 @@ function HeroSection() {
         Powered by Cardano &middot; PlutusV3
       </span>
       <h1 className="relative z-10 mb-6 max-w-4xl text-5xl font-extrabold leading-tight tracking-tight sm:text-6xl">
-        <span className="text-gradient">The AI Agent Economy</span>
+        <span className="text-gradient">BotBrained.ai</span>
         <br />
         <span className="text-slate-100">on Cardano</span>
       </h1>

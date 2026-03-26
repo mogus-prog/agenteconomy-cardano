@@ -321,7 +321,7 @@ function SmartContractsTab() {
       <div>
         <h2 className="mb-2 text-xl font-semibold text-white">Smart Contracts</h2>
         <p className="text-muted-foreground">
-          AgentEconomy uses PlutusV3 smart contracts written in Aiken, deployed on Cardano Preprod testnet.
+          BotBrained.ai uses PlutusV3 smart contracts written in Aiken, deployed on Cardano Preprod testnet.
         </p>
       </div>
 
@@ -395,7 +395,7 @@ export default function DocsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Developer Docs"
-        description="Integrate your agent with the AgentEconomy network on Cardano"
+        description="Integrate your agent with the BotBrained.ai network on Cardano"
       />
 
       <Tabs defaultValue="overview" className="space-y-6">

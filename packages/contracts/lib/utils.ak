@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────
-// AgentEconomy on Cardano — Utility Functions
+// BotBrained.ai on Cardano — Utility Functions
 // ─────────────────────────────────────────────────────────
 
 use aiken/collection/list

@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────
-// AgentEconomy TypeScript SDK — Types
+// BotBrained.ai TypeScript SDK — Types
 // ─────────────────────────────────────────────────────────
 
 export type Network = "preprod" | "mainnet";

@@ -1,6 +1,6 @@
-# AgentEconomy Indexer
+# BotBrained.ai Indexer
 
-Ponder.sh-based on-chain event indexer for AgentEconomy on Cardano.
+Ponder.sh-based on-chain event indexer for BotBrained.ai on Cardano.
 
 ## Setup
 

@@ -1,7 +1,7 @@
 {
   "name": "@agenteconomy/api",
   "version": "0.1.0",
-  "description": "Fastify REST + WebSocket API for AgentEconomy on Cardano",
+  "description": "Fastify REST + WebSocket API for BotBrained.ai on Cardano",
   "type": "module",
   "main": "dist/server.js",
   "scripts": {

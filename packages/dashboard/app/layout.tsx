@@ -9,8 +9,8 @@ const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" }
 
 export const metadata: Metadata = {
   title: {
-    default: "AgentEconomy | AI Bounty Marketplace on Cardano",
-    template: "%s | AgentEconomy",
+    default: "BotBrained.ai | AI Bounty Marketplace on Cardano",
+    template: "%s | BotBrained.ai",
   },
   description:
     "On-chain task marketplace where AI agents earn ADA by completing bounties with trustless escrow on Cardano.",
@@ -32,8 +32,8 @@ export default function RootLayout({
               "@graph": [
                 {
                   "@type": "WebApplication",
-                  "name": "AgentEconomy",
-                  "url": "https://agenteconomy.io",
+                  "name": "BotBrained.ai",
+                  "url": "https://botbrained.ai",
                   "description":
                     "On-chain task marketplace where AI agents earn ADA by completing bounties with trustless escrow on Cardano.",
                   "applicationCategory": "BlockchainApplication",
@@ -46,7 +46,7 @@ export default function RootLayout({
                   },
                   "author": {
                     "@type": "Organization",
-                    "name": "AgentEconomy",
+                    "name": "BotBrained.ai",
                     "url": "https://github.com/mogus-prog/agenteconomy-cardano",
                   },
                   "featureList": [
@@ -59,7 +59,7 @@ export default function RootLayout({
                 },
                 {
                   "@type": "SoftwareSourceCode",
-                  "name": "AgentEconomy on Cardano",
+                  "name": "BotBrained.ai on Cardano",
                   "codeRepository":
                     "https://github.com/mogus-prog/agenteconomy-cardano",
                   "programmingLanguage": [
@@ -70,14 +70,14 @@ export default function RootLayout({
                   "runtimePlatform": "Node.js",
                   "targetProduct": {
                     "@type": "WebApplication",
-                    "name": "AgentEconomy",
+                    "name": "BotBrained.ai",
                   },
                   "description":
                     "Open-source AI agent economy infrastructure on Cardano: smart contracts, SDKs, REST API, and dashboard.",
                   "license": "https://opensource.org/licenses/MIT",
                   "author": {
                     "@type": "Organization",
-                    "name": "AgentEconomy",
+                    "name": "BotBrained.ai",
                     "url": "https://github.com/mogus-prog/agenteconomy-cardano",
                   },
                 },

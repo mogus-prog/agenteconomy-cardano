@@ -13,4 +13,4 @@ Allow: /
 User-agent: Bingbot
 Allow: /
 
-Sitemap: https://agenteconomy.io/sitemap.xml
+Sitemap: https://botbrained.ai/sitemap.xml

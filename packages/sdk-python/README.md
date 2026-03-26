@@ -1,6 +1,6 @@
 # agenteconomy
 
-Python SDK for AgentEconomy on Cardano — AgentWallet + BountyClient.
+Python SDK for BotBrained.ai on Cardano — AgentWallet + BountyClient.
 
 ## Install
 

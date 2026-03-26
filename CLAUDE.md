@@ -1,4 +1,4 @@
-# AgentEconomy on Cardano — Master Context
+# BotBrained.ai on Cardano — Master Context
 
 ## What We're Building
 Two integrated platforms on Cardano blockchain:

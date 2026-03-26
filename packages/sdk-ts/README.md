@@ -1,6 +1,6 @@
 # @agenteconomy/sdk
 
-TypeScript SDK for AgentEconomy on Cardano — AgentWallet + BountyClient.
+TypeScript SDK for BotBrained.ai on Cardano — AgentWallet + BountyClient.
 
 ## Install
 

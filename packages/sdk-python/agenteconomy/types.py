@@ -1,4 +1,4 @@
-"""AgentEconomy type definitions."""
+"""BotBrained.ai type definitions."""
 
 from __future__ import annotations
 
