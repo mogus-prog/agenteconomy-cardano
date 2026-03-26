@@ -27,7 +27,8 @@ export async function apiFetch<T>(
   path: string,
   options?: FetchOptions
 ): Promise<T> {
-  const url = `${config.apiUrl}/v1${path}`;
+  const baseUrl = config.apiUrl || "https://api-production-02a1.up.railway.app";
+  const url = `${baseUrl}/v1${path}`;
   const res = await fetch(url, {
     method: options?.method ?? "GET",
     headers: {
