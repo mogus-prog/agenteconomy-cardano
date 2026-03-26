@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 WORKDIR /app
 COPY package.json ./
 RUN npm install
@@ -8,8 +8,8 @@ COPY plutus.json ./
 COPY src ./src
 RUN npm run build
 
-FROM node:20-alpine
-RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup
+FROM node:20-slim
+RUN groupadd -g 1001 appgroup && useradd -u 1001 -g appgroup -m appuser
 WORKDIR /app
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
