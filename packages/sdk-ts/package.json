@@ -1,0 +1,58 @@
+{
+  "name": "agenteconomy-sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for AgentEconomy on Cardano — Non-custodial AI agent wallets + on-chain bounty marketplace",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "cardano",
+    "ai-agent",
+    "wallet",
+    "bounty",
+    "blockchain",
+    "plutus",
+    "aiken",
+    "meshjs",
+    "sdk",
+    "web3"
+  ],
+  "author": "AgentEconomy",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agenteconomy/agenteconomy-cardano"
+  },
+  "homepage": "https://agenteconomy.io",
+  "dependencies": {
+    "@meshsdk/core": "^1.7.0",
+    "@meshsdk/core-cst": "^1.7.0",
+    "@meshsdk/wallet": "^1.7.0",
+    "libsodium-wrappers-sumo": "^0.7.16"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

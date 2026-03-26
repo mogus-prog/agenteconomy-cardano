@@ -1,0 +1,33 @@
+name: Test Contracts
+
+on:
+  push:
+    paths:
+      - "packages/contracts/**"
+  pull_request:
+    paths:
+      - "packages/contracts/**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Aiken
+        run: |
+          curl -sSfL https://install.aiken-lang.org | bash
+          ~/.aiken/bin/aikup
+          echo "$HOME/.aiken/bin" >> $GITHUB_PATH
+
+      - name: Run Aiken check
+        working-directory: packages/contracts
+        run: aiken check
+
+      - name: Run Aiken build
+        working-directory: packages/contracts
+        run: aiken build
+
+      - name: Verify plutus.json exists
+        working-directory: packages/contracts
+        run: test -f plutus.json

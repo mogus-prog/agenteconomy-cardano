@@ -1,0 +1,45 @@
+name: Test SDKs
+
+on:
+  push:
+    paths:
+      - "packages/sdk-ts/**"
+      - "packages/sdk-python/**"
+  pull_request:
+    paths:
+      - "packages/sdk-ts/**"
+      - "packages/sdk-python/**"
+
+jobs:
+  test-ts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install dependencies
+        working-directory: packages/sdk-ts
+        run: npm ci
+      - name: TypeScript check
+        working-directory: packages/sdk-ts
+        run: npx tsc --noEmit
+      - name: Run tests
+        working-directory: packages/sdk-ts
+        run: npm test
+
+  test-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        working-directory: packages/sdk-python
+        run: |
+          pip install aiohttp cbor2 pytest pytest-asyncio
+          pip install -e .
+      - name: Run tests
+        working-directory: packages/sdk-python
+        run: PYTHONPATH=. pytest tests/ -v

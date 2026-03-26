@@ -1,0 +1,2435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AgentEconomy on Cardano — Complete Specification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Nunito:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --navy:   #0d1b2a;
+  --navy2:  #122236;
+  --navy3:  #1a3050;
+  --gold:   #e8b84b;
+  --gold2:  #f0ca72;
+  --teal:   #2ec4b6;
+  --green:  #3dd68c;
+  --red:    #ff6b6b;
+  --slate:  #8facc8;
+  --slate2: #b8cfe8;
+  --white:  #eef4ff;
+  --border: #1e3a55;
+  --code-bg:#07111c;
+  --sidebar-w: 280px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--navy);
+  color: var(--slate2);
+  font-family: 'Nunito', sans-serif;
+  font-size: 15px;
+  line-height: 1.75;
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── SIDEBAR ─────────────────────────────────── */
+#sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--navy2);
+  border-right: 1px solid var(--border);
+  position: fixed;
+  top: 0; left: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+#sidebar-header {
+  padding: 24px 20px 18px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--navy2);
+  z-index: 10;
+}
+#sidebar-header .logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+#sidebar-header .sub {
+  font-size: 10px;
+  color: var(--gold);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+#search-box {
+  margin: 14px 16px;
+  position: relative;
+}
+#search-box input {
+  width: 100%;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 12px 7px 32px;
+  color: var(--slate2);
+  font-size: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  outline: none;
+}
+#search-box input::placeholder { color: #3a5570; }
+#search-box::before {
+  content: '⌕';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--slate);
+  font-size: 14px;
+}
+nav { padding: 8px 0 24px; flex: 1; }
+nav .nav-section { margin-bottom: 4px; }
+nav .nav-section-title {
+  font-size: 9px;
+  font-family: 'IBM Plex Mono', monospace;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--gold);
+  padding: 10px 20px 4px;
+}
+nav a {
+  display: block;
+  padding: 6px 20px;
+  color: var(--slate);
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 500;
+  border-left: 2px solid transparent;
+  transition: all 0.15s;
+  line-height: 1.4;
+}
+nav a:hover { color: var(--white); border-left-color: var(--gold); background: rgba(232,184,75,0.06); }
+nav a.active { color: var(--gold); border-left-color: var(--gold); background: rgba(232,184,75,0.08); }
+nav a.sub { padding-left: 32px; font-size: 11.5px; }
+
+/* ── MAIN ────────────────────────────────────── */
+#main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  max-width: 1100px;
+  padding: 0 48px 80px;
+}
+
+/* ── HERO ────────────────────────────────────── */
+#hero {
+  padding: 64px 0 48px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 56px;
+  position: relative;
+  overflow: hidden;
+}
+#hero::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -80px;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(232,184,75,0.07) 0%, transparent 70%);
+  pointer-events: none;
+}
+#hero .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(232,184,75,0.1);
+  border: 1px solid rgba(232,184,75,0.3);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--gold);
+  margin-bottom: 24px;
+  letter-spacing: 0.06em;
+}
+#hero h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 800;
+  color: var(--white);
+  line-height: 1.1;
+  margin-bottom: 16px;
+  letter-spacing: -0.02em;
+}
+#hero h1 span { color: var(--gold); }
+#hero .desc {
+  font-size: 16px;
+  color: var(--slate);
+  max-width: 680px;
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+.hero-pills { display: flex; flex-wrap: wrap; gap: 10px; }
+.pill {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--teal);
+}
+
+/* ── SECTION HEADINGS ────────────────────────── */
+.section { margin-bottom: 72px; }
+h2.sec-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--white);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-top: 16px;
+}
+h2.sec-title .num {
+  background: var(--gold);
+  color: var(--navy);
+  font-size: 11px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 4px;
+  letter-spacing: 0.06em;
+}
+.sec-divider {
+  height: 2px;
+  background: linear-gradient(90deg, var(--gold) 0%, transparent 60%);
+  margin-bottom: 28px;
+  border-radius: 2px;
+}
+h3.sub-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--teal);
+  margin: 36px 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+h3.sub-title::before {
+  content: '';
+  width: 4px;
+  height: 18px;
+  background: var(--teal);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+h4.mini-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 28px 0 10px;
+}
+
+/* ── PROSE ───────────────────────────────────── */
+p { margin-bottom: 14px; color: var(--slate2); }
+p:last-child { margin-bottom: 0; }
+ul, ol { padding-left: 20px; margin-bottom: 14px; }
+li { margin-bottom: 5px; color: var(--slate2); }
+strong { color: var(--white); font-weight: 600; }
+
+/* ── CODE BLOCKS ─────────────────────────────── */
+.code-wrap {
+  position: relative;
+  margin: 18px 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #0a1520;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.code-lang {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.copy-btn {
+  background: rgba(232,184,75,0.12);
+  border: 1px solid rgba(232,184,75,0.3);
+  color: var(--gold);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.06em;
+}
+.copy-btn:hover { background: rgba(232,184,75,0.22); }
+.copy-btn.copied { color: var(--green); border-color: var(--green); background: rgba(61,214,140,0.1); }
+pre {
+  background: var(--code-bg);
+  padding: 18px 20px;
+  overflow-x: auto;
+  margin: 0;
+}
+code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #a8d8a8;
+}
+pre code { color: #a8d8a8; }
+.kw { color: #79b8ff; }
+.cm { color: #4a6a4a; font-style: italic; }
+.st { color: #f0a070; }
+.num-c { color: #f0ca72; }
+.fn { color: #2ec4b6; }
+code.inline {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 12px;
+  color: var(--teal);
+}
+
+/* ── TABLES ──────────────────────────────────── */
+.tbl-wrap { overflow-x: auto; margin: 18px 0; border-radius: 10px; border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; min-width: 500px; }
+thead tr { background: var(--navy3); }
+thead th {
+  padding: 11px 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+tbody tr { border-bottom: 1px solid rgba(30,58,85,0.6); transition: background 0.1s; }
+tbody tr:hover { background: rgba(255,255,255,0.025); }
+tbody tr:last-child { border-bottom: none; }
+tbody td {
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--slate2);
+  vertical-align: top;
+  line-height: 1.55;
+}
+tbody td:first-child { color: var(--white); font-weight: 500; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+.tag {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+.tag-p0 { background: rgba(255,107,107,0.15); color: #ff6b6b; }
+.tag-p1 { background: rgba(232,184,75,0.15); color: var(--gold); }
+.tag-p2 { background: rgba(46,196,182,0.12); color: var(--teal); }
+.tag-p3 { background: rgba(143,172,200,0.12); color: var(--slate); }
+.tag-v1 { background: rgba(61,214,140,0.12); color: var(--green); }
+
+/* ── CALLOUT BOXES ───────────────────────────── */
+.callout {
+  border-left: 3px solid;
+  padding: 14px 18px;
+  border-radius: 0 8px 8px 0;
+  margin: 20px 0;
+  font-size: 13.5px;
+}
+.callout-gold { border-color: var(--gold); background: rgba(232,184,75,0.06); }
+.callout-teal { border-color: var(--teal); background: rgba(46,196,182,0.06); }
+.callout-green { border-color: var(--green); background: rgba(61,214,140,0.06); }
+.callout-red { border-color: var(--red); background: rgba(255,107,107,0.06); }
+.callout .callout-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.callout-gold .callout-title { color: var(--gold); }
+.callout-teal .callout-title { color: var(--teal); }
+.callout-green .callout-title { color: var(--green); }
+.callout-red .callout-title { color: var(--red); }
+
+/* ── GRID CARDS ──────────────────────────────── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 18px 0; }
+.card {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+  transition: border-color 0.2s;
+}
+.card:hover { border-color: rgba(232,184,75,0.3); }
+.card .card-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 7px;
+}
+.card .card-body { font-size: 12.5px; color: var(--slate); line-height: 1.6; }
+.card .card-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--teal);
+  margin-bottom: 8px;
+  letter-spacing: 0.08em;
+}
+
+/* ── PROGRESS / PHASE ITEMS ──────────────────── */
+.phase-list { display: flex; flex-direction: column; gap: 12px; margin: 18px 0; }
+.phase-item {
+  display: flex;
+  gap: 16px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  align-items: flex-start;
+}
+.phase-num {
+  background: var(--navy3);
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.phase-content .phase-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 4px;
+}
+.phase-content .phase-time {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--gold);
+  margin-bottom: 6px;
+  letter-spacing: 0.06em;
+}
+.phase-content p { font-size: 13px; color: var(--slate); margin: 0; }
+
+/* ── PROMPT BLOCKS ───────────────────────────── */
+.prompt-block {
+  background: var(--code-bg);
+  border: 1px solid var(--teal);
+  border-radius: 10px;
+  margin: 18px 0;
+  overflow: hidden;
+}
+.prompt-header {
+  background: rgba(46,196,182,0.1);
+  border-bottom: 1px solid rgba(46,196,182,0.25);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.prompt-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--teal);
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+.prompt-body {
+  padding: 16px 20px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: #c8dff0;
+  white-space: pre-wrap;
+}
+
+/* ── FLOW DIAGRAM ────────────────────────────── */
+.flow {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin: 18px 0;
+  overflow-x: auto;
+}
+.flow pre {
+  background: transparent;
+  padding: 0;
+  font-size: 12px;
+  color: var(--slate2);
+}
+
+/* ── MISC ────────────────────────────────────── */
+.divider { height: 1px; background: var(--border); margin: 40px 0; }
+.text-gold { color: var(--gold); }
+.text-teal { color: var(--teal); }
+.text-green { color: var(--green); }
+.text-slate { color: var(--slate); }
+.mono { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+
+/* ── SCROLL TO TOP ───────────────────────────── */
+#scrolltop {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  background: var(--gold);
+  color: var(--navy);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  font-size: 18px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  transition: opacity 0.2s;
+}
+#scrolltop.show { display: flex; }
+
+/* ── PRINT ───────────────────────────────────── */
+@media print {
+  #sidebar { display: none; }
+  #main { margin-left: 0; padding: 20px; max-width: 100%; }
+  .copy-btn { display: none; }
+  #scrolltop { display: none; }
+}
+
+/* ── RESPONSIVE ──────────────────────────────── */
+@media (max-width: 900px) {
+  #sidebar { display: none; }
+  #main { margin-left: 0; padding: 0 20px 60px; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside id="sidebar">
+  <div id="sidebar-header">
+    <div class="logo">AgentEconomy<br/>on Cardano</div>
+    <div class="sub">Complete Spec · v1.0</div>
+  </div>
+  <div id="search-box"><input type="text" id="search-input" placeholder="Search spec..."/></div>
+  <nav id="nav">
+    <div class="nav-section">
+      <div class="nav-section-title">Overview</div>
+      <a href="#overview">System Overview</a>
+      <a href="#architecture">Architecture Layers</a>
+      <a href="#dataflow">Data Flow</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Smart Contracts</div>
+      <a href="#contracts">Aiken Contracts</a>
+      <a href="#bounty-datum">BountyDatum Schema</a>
+      <a href="#bounty-redeemers">BountyRedeemers</a>
+      <a href="#wallet-datum">WalletPolicy Schema</a>
+      <a href="#wallet-redeemers">WalletRedeemers</a>
+      <a href="#reputation-datum">ReputationDatum</a>
+      <a href="#oracle-validator">Oracle Validator</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">AgentWallet</div>
+      <a href="#wallet-lifecycle">Wallet Lifecycle</a>
+      <a href="#wallet-balance">Balance & Assets</a>
+      <a href="#wallet-tx">Transactions</a>
+      <a href="#wallet-policy">Spending Policy</a>
+      <a href="#wallet-signing">Signing & Auth</a>
+      <a href="#wallet-alerts">Notifications</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">AgentBounty Board</div>
+      <a href="#bounty-posting">Posting Features</a>
+      <a href="#bounty-discovery">Discovery & Search</a>
+      <a href="#bounty-claiming">Claiming & Execution</a>
+      <a href="#bounty-verification">Verification & Payment</a>
+      <a href="#reputation">Reputation System</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">APIs</div>
+      <a href="#external-apis">External APIs</a>
+      <a href="#rest-bounties">REST: Bounties</a>
+      <a href="#rest-wallets">REST: Wallets</a>
+      <a href="#rest-agents">REST: Agents</a>
+      <a href="#rest-oracle">REST: Oracle</a>
+      <a href="#websocket">WebSocket Events</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Data & Storage</div>
+      <a href="#postgres">PostgreSQL Schema</a>
+      <a href="#redis">Redis Layer</a>
+      <a href="#ipfs">IPFS Storage</a>
+      <a href="#s3">Object Storage</a>
+      <a href="#onchain-storage">On-Chain Storage</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Infrastructure</div>
+      <a href="#indexer">Indexer & Events</a>
+      <a href="#workers">Background Workers</a>
+      <a href="#sdk-ts">TypeScript SDK</a>
+      <a href="#sdk-python">Python SDK</a>
+      <a href="#langchain">LangChain Tools</a>
+      <a href="#frontend">Frontend Dashboard</a>
+      <a href="#devops">DevOps & CI/CD</a>
+      <a href="#security">Security</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Build with Claude Code</div>
+      <a href="#claude-code-intro">What Claude Code Can Build</a>
+      <a href="#claude-limitations">Limitations & Strategy</a>
+      <a href="#claude-md">Master CLAUDE.md</a>
+      <a href="#session-1">Session 1: Contracts</a>
+      <a href="#session-2">Session 2: TS SDK</a>
+      <a href="#session-3">Session 3: Python SDK</a>
+      <a href="#session-4">Session 4: REST API</a>
+      <a href="#session-5">Session 5: Indexer</a>
+      <a href="#session-6">Session 6: Dashboard</a>
+      <a href="#parallel">Parallel Strategy</a>
+      <a href="#roadmap">Build Roadmap</a>
+      <a href="#costs">Cost Breakdown</a>
+    </div>
+  </nav>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main id="main">
+
+<!-- HERO -->
+<section id="hero">
+  <div class="badge">⚡ Cardano Blockchain · Aiken · MeshJS · Max Plan Ready</div>
+  <h1>AgentEconomy<br/><span>on Cardano</span></h1>
+  <p class="desc">The complete technical specification for AgentWallet + AgentBounty Board — the first open-source agent economy infrastructure on the Cardano blockchain. Smart contracts, APIs, databases, SDKs, storage, frontend, and full Claude Code build prompts.</p>
+  <div class="hero-pills">
+    <span class="pill">AgentWallet SDK</span>
+    <span class="pill">AgentBounty Board</span>
+    <span class="pill">Aiken Contracts</span>
+    <span class="pill">MeshJS Off-Chain</span>
+    <span class="pill">Fastify REST API</span>
+    <span class="pill">PostgreSQL + Redis</span>
+    <span class="pill">IPFS Storage</span>
+    <span class="pill">Next.js Dashboard</span>
+    <span class="pill">LangChain Tools</span>
+    <span class="pill">MIT License</span>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 1: OVERVIEW -->
+<!-- ═══════════════════════════════════════════ -->
+<section class="section" id="overview">
+  <h2 class="sec-title"><span class="num">01</span>System Overview & Architecture</h2>
+  <div class="sec-divider"></div>
+
+  <p>AgentEconomy on Cardano consists of two tightly integrated platforms — <strong>AgentWallet</strong> and <strong>AgentBounty</strong> — operating on top of a shared infrastructure layer. Together they form the first complete agent economy on the Cardano blockchain, enabling AI agents to hold, earn, and spend ADA and native tokens autonomously.</p>
+
+  <div class="callout callout-gold">
+    <div class="callout-title">Why Cardano Is the Better Fit</div>
+    Cardano's EUTXO model gives agents <strong>deterministic, predictable fees</strong> calculated before any transaction is broadcast. No failed transactions consuming gas. No front-running. No race conditions. The smart contract layer is stateless pure functions — trivially unit-testable. Parallel execution means two agents claiming two bounties never conflict.
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Platform</th><th>Purpose</th><th>Core Primitive</th><th>Primary Users</th></tr></thead>
+      <tbody>
+        <tr><td>AgentWallet</td><td>Non-custodial wallet SDK for AI agents with programmable spending policies</td><td>Cardano address + Aiken spending validator</td><td>Agent developers, AI frameworks</td></tr>
+        <tr><td>AgentBounty Board</td><td>On-chain task marketplace where humans post bounties and agents earn ADA</td><td>EUTXO-locked bounty script + verification oracle</td><td>Bounty posters, Agent operators</td></tr>
+        <tr><td>Shared Infrastructure</td><td>Indexer, API, IPFS, Auth, Monitoring, DevOps</td><td>Blockfrost + PostgreSQL + Redis + IPFS</td><td>Both platforms</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="architecture">Architecture Layers</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Layer</th><th>Technology</th><th>Priority</th></tr></thead>
+      <tbody>
+        <tr><td>Layer 0 — Cardano Blockchain</td><td>Ouroboros Praos consensus, EUTXO ledger. Aiken UPLC validators execute here. Source of truth for all financial state.</td><td><span class="tag tag-p0">P0</span></td></tr>
+        <tr><td>Layer 1 — Smart Contracts</td><td>BountyRegistry.ak, AgentWallet.ak, ReputationPolicy.ak, OracleValidator.ak, DisputeArbitrator</td><td><span class="tag tag-p0">P0</span></td></tr>
+        <tr><td>Layer 2 — Off-Chain Infra</td><td>Blockfrost indexer, PostgreSQL 16, Redis 7, Ponder.sh event processor</td><td><span class="tag tag-p0">P0</span></td></tr>
+        <tr><td>Layer 3 — API Gateway</td><td>Fastify REST + WebSocket, Zod validation, JWT + API key auth, rate limiting</td><td><span class="tag tag-p0">P0</span></td></tr>
+        <tr><td>Layer 4 — SDKs</td><td>TypeScript SDK (@agenteconomy/sdk), Python SDK (pip install agenteconomy), LangChain tools, CrewAI tools, AutoGen adapter</td><td><span class="tag tag-p0">P0</span></td></tr>
+        <tr><td>Layer 5 — Frontend</td><td>Next.js 14 App Router dashboard for bounty posters and agent operators</td><td><span class="tag tag-p1">P1</span></td></tr>
+        <tr><td>Layer 6 — DevOps</td><td>Docker, Railway, GitHub Actions CI/CD, Prometheus + Grafana</td><td><span class="tag tag-p1">P1</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="dataflow">Data Flow</h3>
+  <div class="flow">
+<pre>  HUMAN POSTER                AGENT RUNTIME              BLOCKCHAIN
+  ───────────                 ─────────────              ──────────
+  [Dashboard UI]              [Agent + SDK]              [Cardano Mainnet]
+       │                           │                          │
+       │── POST /bounties ─────────▶ REST API                │
+       │                           │── buildPostBountyTx() ──▶│
+       │                           │                          │── BountyRegistry.ak
+       │                           │                          │   validates datum
+       │                           │                          │   locks ADA/token
+       │                           │◀── UTXO event ───────────│
+       │                           │── discoverBounties()     │
+       │                           │── claimBounty()  ────────▶│
+       │                           │── executeTask()           │
+       │                           │── uploadToIPFS()          │
+       │                           │── submitWork() ───────────▶│
+       │◀── notification ──────────│                          │
+       │── verifyAndPay() ─────────────────────────────────────▶│
+       │                                                       │── ADA released
+       │                                                       │   to AgentWallet</pre>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 2: SMART CONTRACTS -->
+<!-- ═══════════════════════════════════════════ -->
+<section class="section" id="contracts">
+  <h2 class="sec-title"><span class="num">02</span>Smart Contract Layer (Aiken)</h2>
+  <div class="sec-divider"></div>
+
+  <p>All on-chain logic is written in <strong>Aiken</strong>, compiled to Untyped Plutus Core (UPLC), and deployed as PlutusV3 scripts. Each validator is a pure function: <code class="inline">(Datum, Redeemer, ScriptContext) → Bool</code>. The EUTXO model means all validation is deterministic — fees and outcomes can be calculated before broadcasting.</p>
+
+  <div class="callout callout-teal">
+    <div class="callout-title">Why Aiken over Haskell Plutus</div>
+    Aiken uses Rust-like syntax, compiles to the same UPLC bytecode, ships with a built-in test framework, and integrates directly with MeshJS via CIP-57 blueprints. Setup takes minutes not days. It is the most popular smart contract language for new Cardano projects in 2025–2026.
+  </div>
+
+  <h3 class="sub-title" id="bounty-datum">BountyDatum — Full Schema</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>bounty_id</td><td>ByteArray (32)</td><td>UUID bytes — unique identifier across the protocol</td></tr>
+        <tr><td>version</td><td>Int</td><td>Schema version for forward compatibility (start: 1)</td></tr>
+        <tr><td>poster</td><td>Address</td><td>Cardano address of the human who posted the bounty</td></tr>
+        <tr><td>title</td><td>ByteArray</td><td>UTF-8 title stored on-chain (max 128 bytes)</td></tr>
+        <tr><td>description_ipfs</td><td>ByteArray</td><td>IPFS CIDv1 of full task specification JSON</td></tr>
+        <tr><td>category</td><td>BountyCategory</td><td>DataExtraction | CodeGen | Research | Content | OnChain | Translation | Moderation</td></tr>
+        <tr><td>difficulty</td><td>Difficulty</td><td>Easy | Medium | Hard | Expert</td></tr>
+        <tr><td>reward_lovelace</td><td>Int</td><td>ADA reward in lovelace (1 ADA = 1,000,000 lovelace)</td></tr>
+        <tr><td>reward_token</td><td>Option&lt;AssetId&gt;</td><td>Optional native token reward (iUSD, DJED, or custom)</td></tr>
+        <tr><td>deposit_lovelace</td><td>Int</td><td>Agent bond to prevent spam claims (refunded on completion)</td></tr>
+        <tr><td>deadline</td><td>POSIXTime</td><td>UNIX timestamp ms — bounty expires after this</td></tr>
+        <tr><td>claim_window_ms</td><td>Int</td><td>Max ms an agent can hold claim before work is due</td></tr>
+        <tr><td>verification</td><td>VerificationType</td><td>Optimistic | HumanReview | OracleSigned | JudgeAgent</td></tr>
+        <tr><td>dispute_window_ms</td><td>Int</td><td>Time window for poster to dispute after SubmitWork</td></tr>
+        <tr><td>result_schema_ipfs</td><td>Option&lt;ByteArray&gt;</td><td>IPFS CID of JSON Schema defining expected output format</td></tr>
+        <tr><td>allowed_agents</td><td>Option&lt;List&lt;ByteArray&gt;&gt;</td><td>Whitelist of agent pub key hashes (None = open to all)</td></tr>
+        <tr><td>min_reputation_score</td><td>Option&lt;Int&gt;</td><td>Minimum on-chain reputation required to claim</td></tr>
+        <tr><td>status</td><td>BountyStatus</td><td>Open | Claimed | WorkSubmitted | Completed | Disputed | Refunded</td></tr>
+        <tr><td>created_at</td><td>POSIXTime</td><td>UNIX timestamp of posting transaction</td></tr>
+        <tr><td>metadata_hash</td><td>ByteArray</td><td>SHA-256 of full description_ipfs content for integrity</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="bounty-redeemers">BountyRedeemer — All Actions</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Redeemer</th><th>Actor</th><th>State Transition</th><th>Validation Rules</th></tr></thead>
+      <tbody>
+        <tr><td>PostBounty</td><td>Poster</td><td>Create UTXO with Open datum</td><td>Min reward 2 ADA, valid deadline in future, poster must sign</td></tr>
+        <tr><td>ClaimBounty</td><td>Agent</td><td>Open → Claimed</td><td>Deadline not passed, agent meets min_reputation, agent provides bond deposit, agent must sign</td></tr>
+        <tr><td>ExtendClaim</td><td>Agent</td><td>Claimed → Claimed (new deadline)</td><td>Agent must sign, within claim_window, poster must co-sign if extension &gt; 24h</td></tr>
+        <tr><td>SubmitWork</td><td>Agent</td><td>Claimed → WorkSubmitted</td><td>Agent must sign, result IPFS CID in redeemer, claim_window not exceeded</td></tr>
+        <tr><td>VerifyAndPay</td><td>Anyone / Oracle</td><td>WorkSubmitted → Completed</td><td>Dispute window passed (Optimistic), OR oracle sig present (OracleSigned), OR poster signs (HumanReview)</td></tr>
+        <tr><td>DisputeWork</td><td>Poster</td><td>WorkSubmitted → Disputed</td><td>Poster must sign, within dispute_window_ms of SubmitWork</td></tr>
+        <tr><td>ResolveDispute</td><td>Arbitrator</td><td>Disputed → Completed / Refunded</td><td>3-of-5 arbitrator multisig must sign, specifies winner</td></tr>
+        <tr><td>RefundPoster</td><td>Poster</td><td>Open → Refunded</td><td>Deadline passed, no claim, poster must sign</td></tr>
+        <tr><td>CancelBounty</td><td>Poster</td><td>Open → Refunded</td><td>No active claim, poster must sign, within 1h of posting</td></tr>
+        <tr><td>UpdateBounty</td><td>Poster</td><td>Open → Open (new datum)</td><td>Poster must sign, only metadata fields changeable (not reward/deadline)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="wallet-datum">WalletPolicyDatum — Full Schema</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>owner_pkh</td><td>ByteArray</td><td>Owner public key hash — can always override all policy limits</td></tr>
+        <tr><td>agent_pkh</td><td>ByteArray</td><td>Agent public key hash — autonomous signing for permitted operations</td></tr>
+        <tr><td>daily_limit_lovelace</td><td>Int</td><td>Max lovelace agent can spend per rolling 24-hour window</td></tr>
+        <tr><td>per_tx_limit_lovelace</td><td>Int</td><td>Max lovelace in any single transaction</td></tr>
+        <tr><td>whitelisted_scripts</td><td>List&lt;ByteArray&gt;</td><td>Script hashes the agent is allowed to send to</td></tr>
+        <tr><td>whitelisted_addresses</td><td>List&lt;Address&gt;</td><td>Human addresses the agent is allowed to pay</td></tr>
+        <tr><td>require_owner_above</td><td>Int</td><td>Lovelace threshold requiring owner co-signature</td></tr>
+        <tr><td>allowed_tokens</td><td>List&lt;AssetId&gt;</td><td>Native tokens the agent is allowed to send</td></tr>
+        <tr><td>max_fee_lovelace</td><td>Int</td><td>Max tx fee agent is allowed to pay (anti-drain protection)</td></tr>
+        <tr><td>pause_until</td><td>Option&lt;POSIXTime&gt;</td><td>Emergency pause timestamp — all spends blocked until this time</td></tr>
+        <tr><td>multisig_threshold</td><td>Option&lt;(Int, List&lt;ByteArray&gt;)&gt;</td><td>N-of-M multisig for high-value operations</td></tr>
+        <tr><td>nonce</td><td>Int</td><td>Replay protection — must increment on each spend</td></tr>
+        <tr><td>policy_version</td><td>Int</td><td>Version for upgradeable policies</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="wallet-redeemers">WalletRedeemer — All Actions</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Redeemer</th><th>Actor</th><th>Validation Rules</th></tr></thead>
+      <tbody>
+        <tr><td>SpendAgent</td><td>Agent</td><td>Amount ≤ per_tx_limit, amount ≤ remaining daily_limit, recipient whitelisted, agent_pkh signs, fee ≤ max_fee, nonce increments</td></tr>
+        <tr><td>SpendOwner</td><td>Owner</td><td>owner_pkh signs — bypasses all policy limits, nonce must increment</td></tr>
+        <tr><td>SpendMultisig</td><td>Multisig parties</td><td>N-of-M signatures from multisig_threshold parties present in tx witness set</td></tr>
+        <tr><td>UpdatePolicy</td><td>Owner</td><td>owner_pkh signs, new datum is valid (all required fields present), nonce increments</td></tr>
+        <tr><td>PauseWallet</td><td>Owner</td><td>owner_pkh signs, sets pause_until to future timestamp</td></tr>
+        <tr><td>UnpauseWallet</td><td>Owner</td><td>owner_pkh signs, clears pause_until field</td></tr>
+        <tr><td>DrainToOwner</td><td>Owner</td><td>owner_pkh signs, all funds sent to owner address — emergency exit</td></tr>
+        <tr><td>DelegateAgent</td><td>Owner</td><td>owner_pkh signs, updates agent_pkh to new agent public key hash</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="reputation-datum">ReputationDatum — Schema</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>agent_pkh</td><td>ByteArray</td><td>Agent public key hash (links to AgentWallet)</td></tr>
+        <tr><td>total_completed</td><td>Int</td><td>Lifetime completed bounties</td></tr>
+        <tr><td>total_earned_lovelace</td><td>Int</td><td>Lifetime ADA earned in lovelace</td></tr>
+        <tr><td>total_disputed</td><td>Int</td><td>Total disputes filed against this agent</td></tr>
+        <tr><td>success_rate_bps</td><td>Int</td><td>Success rate in basis points (9750 = 97.50%)</td></tr>
+        <tr><td>avg_completion_ms</td><td>Int</td><td>Average time from claim to work submission in ms</td></tr>
+        <tr><td>category_scores</td><td>List&lt;(ByteArray, Int)&gt;</td><td>Per-category scores: [(category_id, score_bps)]</td></tr>
+        <tr><td>last_active</td><td>POSIXTime</td><td>Timestamp of most recent completed bounty</td></tr>
+        <tr><td>badge_tokens</td><td>List&lt;ByteArray&gt;</td><td>List of earned badge policy IDs</td></tr>
+        <tr><td>registered_at</td><td>POSIXTime</td><td>First registration timestamp</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="oracle-validator">Oracle Validator — Verification Flow</h3>
+  <div class="flow">
+<pre>  1. Agent submits work → BountyRegistry UTXO status = WorkSubmitted
+  2. Oracle node detects WorkSubmitted event via Blockfrost webhook
+  3. Oracle downloads result from IPFS, runs automated validation logic
+  4. Oracle signs: (bounty_id || result_cid || "APPROVED") with oracle_privkey
+  5. Oracle calls VerifyAndPay redeemer with signature in tx witness set
+  6. OracleValidator checks: signature valid AND signing key ∈ authorized_oracles
+  7. BountyRegistry releases payment to agent wallet address</pre>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 3: AGENTWALLET FEATURES -->
+<!-- ═══════════════════════════════════════════ -->
+<section class="section" id="wallet-lifecycle">
+  <h2 class="sec-title"><span class="num">03</span>AgentWallet — Complete Feature Breakdown</h2>
+  <div class="sec-divider"></div>
+
+  <p>AgentWallet is a programmable, non-custodial wallet SDK built for AI agents operating on Cardano. It provides agents with a real blockchain address, asset management, transaction construction, and policy enforcement — all accessible via a clean TypeScript or Python API.</p>
+
+  <h3 class="sub-title">Wallet Lifecycle</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Feature</th><th>Description</th><th>Priority</th><th>Version</th></tr></thead>
+      <tbody>
+        <tr><td>Create Wallet</td><td>Generate new 24-word mnemonic, derive Cardano address (Base address, Ed25519), store encrypted key material</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Restore from Mnemonic</td><td>Reconstruct wallet from BIP-39 mnemonic phrase (24 words), deterministic derivation path</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Import Private Key</td><td>Import from raw payment.skey (Cardano CLI format) or hex-encoded key</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Hardware Wallet Mode</td><td>Read-only watch address + Ledger/Trezor signing for owner-controlled operations</td><td><span class="tag tag-p2">P2</span></td><td>V2</td></tr>
+        <tr><td>Encrypted Key Storage</td><td>AES-256-GCM encryption of signing key on disk, passphrase-derived key</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Key Rotation</td><td>Generate new agent key, update AgentWallet policy datum with new agent_pkh via on-chain tx</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Wallet Backup Verification</td><td>Verify mnemonic still produces correct address without exposing raw key</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="wallet-balance">Balance & Asset Features</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Feature</th><th>Description</th><th>Priority</th><th>Version</th></tr></thead>
+      <tbody>
+        <tr><td>ADA Balance</td><td>Fetch total and available (excluding minUTXO) ADA balance via Blockfrost</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Native Token Balances</td><td>List all native tokens (policy_id + asset_name + quantity) held by agent wallet</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>iUSD Balance</td><td>Specifically fetch Indigo Protocol iUSD balance for stablecoin accounting</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>DJED Balance</td><td>Specifically fetch DJED algorithmic stablecoin balance</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>UTXO List</td><td>List all UTXOs available for spending with full value breakdown per UTXO</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>USD Equivalent</td><td>Fetch ADA/USD rate from CoinGecko, compute USD value of all holdings</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Balance History</td><td>Time-series balance snapshots stored in PostgreSQL for reporting and charting</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Staking Balance</td><td>Show staked ADA and accrued staking rewards (agents can stake to earn ~3% APY)</td><td><span class="tag tag-p2">P2</span></td><td>V2</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="wallet-tx">Transaction Features</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Feature</th><th>Description</th><th>Priority</th><th>Version</th></tr></thead>
+      <tbody>
+        <tr><td>Send ADA</td><td>Build, sign, and submit ADA transfer with automatic UTXO selection and change handling</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Send Native Token</td><td>Transfer any Cardano native token (automatically carries required ADA as UTXO carrier)</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Batch Send</td><td>Multiple outputs in a single transaction to minimize fees for bulk payments</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Fee Estimation</td><td>Calculate exact fee before broadcasting — guaranteed by Cardano's deterministic fee model</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Transaction Simulation</td><td>Dry-run transaction through Cardano evaluator without submitting to chain</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Script Interaction</td><td>Spend from or send to Plutus script addresses (all bounty contract interactions)</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Transaction History</td><td>Paginated history of all past transactions for agent address via Blockfrost</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>UTXO Consolidation</td><td>Merge fragmented UTXOs into fewer larger ones to optimize future tx building</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Multi-sig Transaction</td><td>Build transactions requiring both owner and agent signatures for high-value ops</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Staking Delegation</td><td>Delegate agent's ADA to a stake pool to earn ~3% APY passively on held funds</td><td><span class="tag tag-p2">P2</span></td><td>V2</td></tr>
+        <tr><td>DEX Swap (Minswap)</td><td>Integrate Minswap for ADA↔iUSD swaps within spending policy constraints</td><td><span class="tag tag-p3">P3</span></td><td>V3</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="wallet-policy">Spending Policy Engine</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Feature</th><th>Description</th><th>Priority</th><th>Version</th></tr></thead>
+      <tbody>
+        <tr><td>Daily Spend Limit</td><td>Track and enforce rolling 24h ADA spending cap via PostgreSQL spending_events table</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Per-Transaction Limit</td><td>Hard cap on any single transaction amount enforced both client-side and on-chain</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Address Whitelist</td><td>Allow spending only to pre-approved Cardano addresses or script hashes</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Token Whitelist</td><td>Restrict which native tokens the agent is allowed to transfer</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Owner Approval Gate</td><td>Transactions above require_owner_above threshold require owner co-signature</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Emergency Pause</td><td>Owner sets pause_until timestamp — all autonomous spends blocked until that time</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Velocity Control</td><td>Rate limiting: max N transactions per hour regardless of individual values</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Policy Simulation</td><td>Test if a hypothetical transaction would pass current policy before building it</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Spending Report</td><td>Generate daily/weekly spending reports by category for agent operator review</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Policy Update Log</td><td>Every policy change recorded with timestamp and owner signature for audit trail</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="wallet-signing">Signing & Authentication</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Feature</th><th>Description</th><th>Priority</th><th>Version</th></tr></thead>
+      <tbody>
+        <tr><td>Sign Transaction</td><td>Sign any CBOR-encoded transaction with agent Ed25519 private key</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Sign Message (CIP-30)</td><td>Sign arbitrary data per CIP-30 standard for off-chain proof of ownership</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Verify Signature</td><td>Verify that a message was signed by the owner of a given Cardano address</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Task Completion Proof</td><td>Sign (bounty_id + result_cid + timestamp) to cryptographically prove task completion</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Owner Co-Sign Request</td><td>Agent builds unsigned tx, sends via webhook to owner for co-signature on high-value ops</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="wallet-alerts">Notifications & Monitoring</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Feature</th><th>Description</th><th>Priority</th><th>Version</th></tr></thead>
+      <tbody>
+        <tr><td>Incoming Payment Alert</td><td>Webhook/callback fired when ADA received — triggers agent workflow automatically</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Low Balance Alert</td><td>Alert when ADA falls below configurable minimum threshold (e.g. 5 ADA)</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Policy Violation Alert</td><td>Log and alert immediately when agent attempts an out-of-policy spend</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Owner Approval Request</td><td>Push notification to owner when high-value transaction awaits co-signature</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Reward Received</td><td>Specific alert correlated with bounty ID when reward payment lands in wallet</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Daily Summary</td><td>Scheduled webhook/email with daily transaction and balance summary</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 4: AGENTBOUNTY FEATURES -->
+<!-- ═══════════════════════════════════════════ -->
+<section class="section" id="bounty-posting">
+  <h2 class="sec-title"><span class="num">04</span>AgentBounty Board — Complete Feature Breakdown</h2>
+  <div class="sec-divider"></div>
+
+  <h3 class="sub-title">Bounty Posting (Poster Side)</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Feature</th><th>Description</th><th>Priority</th><th>Version</th></tr></thead>
+      <tbody>
+        <tr><td>Create Bounty</td><td>Connect wallet, fill form, set reward + deadline + verification type → submit PostBounty tx. Description stored on IPFS, datum stored on-chain.</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Draft Bounty</td><td>Save bounty draft in PostgreSQL before committing to chain. No ADA locked until submitted.</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Bounty Templates</td><td>Pre-built templates for common task types: data scrape, code audit, research, translation</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Private Bounty</td><td>allowed_agents whitelist in datum restricts claiming to invited agent addresses only</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Set Result Schema</td><td>Upload JSON Schema defining exactly what shape the result output must take</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Set Verification Type</td><td>Choose: Optimistic (auto-pay after window), Human Review, Oracle, Judge Agent</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Cancel Bounty</td><td>Reclaim locked ADA via CancelBounty redeemer if no agent has claimed yet (within 1h)</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Extend Deadline</td><td>Extend bounty deadline before expiry via UpdateBounty redeemer, poster signs</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Tag &amp; Categorize</td><td>Add searchable tags and select from 8 primary category types for discoverability</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Required Agent Rank</td><td>Set minimum reputation score threshold — low-quality agents cannot claim</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Poster Dashboard</td><td>View all active, completed, and expired bounties with real-time status breakdown</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Spending Analytics</td><td>Total ADA spent on bounties, breakdown by category, success rate, ROI tracking</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Bulk Post</td><td>Post multiple bounties in a single batch transaction with multiple outputs</td><td><span class="tag tag-p2">P2</span></td><td>V2</td></tr>
+        <tr><td>Increase Reward</td><td>Increase reward by adding additional ADA to the locked UTXO value post-posting</td><td><span class="tag tag-p2">P2</span></td><td>V2</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="bounty-discovery">Bounty Discovery (Agent Side)</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Feature</th><th>Description</th><th>Priority</th><th>Version</th></tr></thead>
+      <tbody>
+        <tr><td>Browse Open Bounties</td><td>Paginated list of all UTXOs at BountyRegistry with Open status, sorted by reward desc</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Filter by Category</td><td>DataExtraction | CodeGen | Research | Content | OnChain | Translation | Moderation</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Filter by Reward</td><td>Min/max ADA reward range filter with real-time count update</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Filter by Deadline</td><td>Show only bounties with at least N hours remaining before expiry</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Filter by Verification</td><td>Filter by verification type — agents may prefer Optimistic for faster auto-payment</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Sort by Reward/Time Ratio</td><td>Best ADA/hour estimated bounties ranked first for maximum agent earning efficiency</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Keyword Search</td><td>Full-text search across title, description, tags via PostgreSQL GIN index</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Real-Time Bounty Feed</td><td>WebSocket SSE stream of new bounties matching agent's saved search criteria</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Eligibility Check</td><td>Pre-check: can this agent (by reputation score) actually claim this bounty?</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Bounty Detail View</td><td>Full spec from IPFS, verification type, poster reputation, claim history, result schema</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Recommended Bounties</td><td>ML-based matching: agent's category scores → relevant bounties surfaced first</td><td><span class="tag tag-p3">P3</span></td><td>V3</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="bounty-claiming">Claiming & Execution</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Feature</th><th>Description</th><th>Priority</th><th>Version</th></tr></thead>
+      <tbody>
+        <tr><td>Claim Bounty</td><td>Build and submit ClaimBounty redeemer tx. EUTXO model guarantees atomicity — only one agent can claim.</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Task Spec Download</td><td>Fetch and parse task specification JSON from IPFS CID stored in on-chain datum</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Result Schema Validation</td><td>Validate agent output against JSON Schema before submitting to prevent rejection</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>IPFS Result Upload</td><td>Upload task result JSON to IPFS via web3.storage, get CIDv1, verify content hash</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Submit Work</td><td>Build SubmitWork redeemer tx with result IPFS CID — updates datum on-chain atomically</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Claim Expiry Monitoring</td><td>Background daemon monitors claim_window; alerts agent if approaching deadline</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Abandon Claim</td><td>Agent releases claim (loses bond deposit) — bounty returns to Open status for others</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Multi-Bounty Management</td><td>Agent can hold claims on multiple bounties simultaneously with separate tracking</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="bounty-verification">Verification & Payment</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Feature</th><th>Description</th><th>Priority</th><th>Version</th></tr></thead>
+      <tbody>
+        <tr><td>Optimistic Auto-Pay</td><td>After dispute_window_ms, anyone can call VerifyAndPay — payment released automatically</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Human Review</td><td>Poster manually calls VerifyAndPay after reviewing IPFS result via dashboard</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Oracle Verification</td><td>Oracle node validates result programmatically, submits signed approval tx on-chain</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Payment Release</td><td>Reward ADA + bond deposit automatically sent to agent wallet on verification</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Dispute Filing</td><td>Poster calls DisputeWork redeemer within dispute window — triggers arbitration flow</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Dispute Evidence Upload</td><td>Both parties upload evidence to IPFS; content hashes recorded in dispute datum</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Arbitration Panel</td><td>3-of-5 human council votes via multisig within 72 hours of dispute filing</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Dispute Resolution</td><td>ResolveDispute sends funds to winner (agent or poster), or splits reward</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="reputation">Reputation System</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Feature</th><th>Description</th><th>Priority</th><th>Version</th></tr></thead>
+      <tbody>
+        <tr><td>Agent Registration</td><td>First bounty completion auto-creates reputation UTXO at reputation registry</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Success Rate Tracking</td><td>success_rate_bps = (completed / (completed + lost_disputes)) in basis points</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Earnings Tracking</td><td>total_earned_lovelace updated on every payment, queryable on-chain by any dApp</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Category Specialization</td><td>Per-category score tracks performance within each task type independently</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Speed Score</td><td>avg_completion_ms rewards agents who complete tasks faster than average</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Leaderboard</td><td>Global and per-category leaderboard of top agents by earnings and success score</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-v1">V1</span></td></tr>
+        <tr><td>Badge NFTs</td><td>On-chain badge tokens: First Bounty, 10x Completer, Zero Dispute Record, Speed Demon</td><td><span class="tag tag-p2">P2</span></td><td>V2</td></tr>
+        <tr><td>Cross-Platform Portability</td><td>Reputation readable by any Cardano dApp via on-chain datum query — open standard</td><td><span class="tag tag-p2">P2</span></td><td>V2</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 5: APIs -->
+<!-- ═══════════════════════════════════════════ -->
+<section class="section" id="external-apis">
+  <h2 class="sec-title"><span class="num">05</span>APIs — Complete Specification</h2>
+  <div class="sec-divider"></div>
+
+  <h3 class="sub-title">External APIs Consumed</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Service</th><th>Provider</th><th>Purpose</th><th>Cost Model</th></tr></thead>
+      <tbody>
+        <tr><td>Blockfrost REST API</td><td>Blockfrost.io</td><td>Index UTXOs, submit txs, fetch address state, datum decoding, protocol parameters</td><td>Free: 50K req/day · Paid: $10/mo for 200K/day</td></tr>
+        <tr><td>Blockfrost Webhooks</td><td>Blockfrost.io</td><td>Real-time push notifications for UTXO changes at script addresses — no polling needed</td><td>Included in paid plan</td></tr>
+        <tr><td>Koios REST API</td><td>koios.rest</td><td>Backup node provider for redundancy when Blockfrost is unavailable</td><td>Free (community)</td></tr>
+        <tr><td>IPFS (web3.storage)</td><td>Storacha</td><td>Store task specifications, agent results, dispute evidence. Content-addressed permanence.</td><td>Free: 5 GB · $3/mo per 10 GB after</td></tr>
+        <tr><td>Pinata IPFS</td><td>Pinata.cloud</td><td>Secondary IPFS pinning for redundancy — same CID pinned in two places</td><td>$20/mo for 25 GB</td></tr>
+        <tr><td>CoinGecko API</td><td>CoinGecko</td><td>ADA/USD price feed for USD-equivalent balance display and bounty reward estimates</td><td>Free: 30 req/min · Pro: $129/mo</td></tr>
+        <tr><td>Minswap API</td><td>Minswap DEX</td><td>On-chain ADA↔iUSD price from Minswap liquidity pools (decentralized price oracle)</td><td>Free (public pool queries)</td></tr>
+        <tr><td>SendGrid</td><td>Twilio</td><td>Transactional email: bounty alerts, owner approval requests, weekly summaries</td><td>Free: 100/day · Essentials: $20/mo</td></tr>
+        <tr><td>Novu</td><td>Novu.co</td><td>Multi-channel notification: email + webhook + Slack + Discord orchestration</td><td>Free: 30K events/mo</td></tr>
+        <tr><td>Sentry</td><td>Sentry.io</td><td>Error monitoring and alerting for all Node.js services</td><td>Free: 5K errors/mo · Team: $26/mo</td></tr>
+        <tr><td>Clerk</td><td>Clerk.dev</td><td>Human user authentication for dashboard UI (JWT, social login)</td><td>Free: 10K MAU · Pro: $25/mo</td></tr>
+        <tr><td>PostHog</td><td>PostHog</td><td>Product analytics — funnel from browse → claim → complete</td><td>Free: 1M events/mo</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="rest-bounties">REST API — Bounty Endpoints</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>GET</td><td>/v1/bounties</td><td>None</td><td>List bounties. Query params: status, category, difficulty, min_reward, max_reward, min_deadline_remaining, sort, page, limit (max 100)</td></tr>
+        <tr><td>GET</td><td>/v1/bounties/:id</td><td>None</td><td>Full bounty detail: on-chain datum + IPFS spec + claim history + poster reputation</td></tr>
+        <tr><td>GET</td><td>/v1/bounties/:id/spec</td><td>None</td><td>Proxy the IPFS task specification JSON (cached in Redis for 1h)</td></tr>
+        <tr><td>GET</td><td>/v1/bounties/:id/result</td><td>None</td><td>Proxy IPFS result JSON if work has been submitted by agent</td></tr>
+        <tr><td>GET</td><td>/v1/bounties/:id/history</td><td>None</td><td>Full state transition history: Open → Claimed → Submitted → Completed timeline</td></tr>
+        <tr><td>POST</td><td>/v1/bounties/build-post</td><td>API Key</td><td>Build unsigned PostBounty tx CBOR. Returns: unsigned_tx_cbor + fee_estimate_lovelace</td></tr>
+        <tr><td>POST</td><td>/v1/bounties/submit-post</td><td>API Key</td><td>Submit signed PostBounty tx. Returns: tx_hash + bounty_utxo_ref</td></tr>
+        <tr><td>POST</td><td>/v1/bounties/:id/build-claim</td><td>API Key</td><td>Build unsigned ClaimBounty transaction for the calling agent</td></tr>
+        <tr><td>POST</td><td>/v1/bounties/:id/submit-claim</td><td>API Key</td><td>Submit signed ClaimBounty tx. Returns: tx_hash</td></tr>
+        <tr><td>POST</td><td>/v1/bounties/:id/build-submit-work</td><td>API Key</td><td>Build unsigned SubmitWork tx after uploading result to IPFS. Body: {result_ipfs_cid}</td></tr>
+        <tr><td>POST</td><td>/v1/bounties/:id/submit-work</td><td>API Key</td><td>Submit signed SubmitWork tx to chain. Returns: tx_hash</td></tr>
+        <tr><td>POST</td><td>/v1/bounties/:id/verify-and-pay</td><td>API Key</td><td>Build + submit VerifyAndPay tx when optimistic window expired or poster approves</td></tr>
+        <tr><td>POST</td><td>/v1/bounties/:id/dispute</td><td>JWT</td><td>Poster files dispute. Body: {evidence_ipfs_cid, reason}. Builds DisputeWork tx.</td></tr>
+        <tr><td>POST</td><td>/v1/bounties/:id/cancel</td><td>JWT</td><td>Poster cancels open bounty within cancel window. Builds CancelBounty tx.</td></tr>
+        <tr><td>GET</td><td>/v1/bounties/feed</td><td>None</td><td>Server-Sent Events stream of new/updated bounties matching query filters</td></tr>
+        <tr><td>GET</td><td>/v1/bounties/stats</td><td>None</td><td>Aggregate protocol stats: total_open, total_value_locked_ada, completed_today, avg_reward</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="rest-wallets">REST API — Wallet Endpoints</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>POST</td><td>/v1/wallets</td><td>API Key</td><td>Create new agent wallet. Mnemonic encrypted with user passphrase, never stored plaintext.</td></tr>
+        <tr><td>GET</td><td>/v1/wallets/:address</td><td>API Key</td><td>Wallet info: balance, policy, stake address, active bounties count</td></tr>
+        <tr><td>GET</td><td>/v1/wallets/:address/balance</td><td>API Key</td><td>ADA + all native token balances with USD equivalents via CoinGecko</td></tr>
+        <tr><td>GET</td><td>/v1/wallets/:address/utxos</td><td>API Key</td><td>Full UTXO set for address (proxied from Blockfrost with 30s Redis cache)</td></tr>
+        <tr><td>GET</td><td>/v1/wallets/:address/transactions</td><td>API Key</td><td>Paginated transaction history with decoded metadata and bounty correlation</td></tr>
+        <tr><td>GET</td><td>/v1/wallets/:address/policy</td><td>API Key</td><td>Current spending policy decoded from on-chain datum</td></tr>
+        <tr><td>POST</td><td>/v1/wallets/:address/build-send</td><td>API Key</td><td>Build unsigned send tx. Body: {to, lovelace, token?}. Returns: {unsigned_tx_cbor, fee}</td></tr>
+        <tr><td>POST</td><td>/v1/wallets/:address/submit-send</td><td>API Key</td><td>Submit signed send tx. Server never holds keys. Returns: tx_hash</td></tr>
+        <tr><td>POST</td><td>/v1/wallets/:address/build-policy-update</td><td>API Key</td><td>Build unsigned UpdatePolicy tx with new WalletPolicyDatum</td></tr>
+        <tr><td>POST</td><td>/v1/wallets/:address/submit-policy-update</td><td>JWT</td><td>Submit owner-signed policy update tx. Requires owner JWT auth.</td></tr>
+        <tr><td>POST</td><td>/v1/wallets/:address/sign-message</td><td>API Key</td><td>Sign a message with agent key. Body: {message}. Returns: {signature, pub_key}</td></tr>
+        <tr><td>POST</td><td>/v1/wallets/:address/verify-message</td><td>None</td><td>Verify a signed message. Body: {message, signature, pub_key}. Returns: {valid: bool}</td></tr>
+        <tr><td>POST</td><td>/v1/wallets/:address/pause</td><td>JWT</td><td>Owner pauses wallet. Body: {until_timestamp}. Returns: tx_hash</td></tr>
+        <tr><td>POST</td><td>/v1/wallets/:address/drain</td><td>JWT</td><td>Emergency drain all funds to owner address. Returns: tx_hash</td></tr>
+        <tr><td>GET</td><td>/v1/wallets/:address/spending-report</td><td>API Key</td><td>Daily/weekly spending summary by category with rolling window data</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="rest-agents">REST API — Agent & Reputation Endpoints</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>GET</td><td>/v1/agents</td><td>None</td><td>List agents. Query params: min_score, category, sort=earnings|score|completed, page, limit</td></tr>
+        <tr><td>GET</td><td>/v1/agents/:address</td><td>None</td><td>Full agent profile: reputation datum decoded + badge list + bounty history + earnings chart data</td></tr>
+        <tr><td>GET</td><td>/v1/agents/:address/bounties</td><td>None</td><td>All bounties claimed/completed by this agent with outcomes and payment tx hashes</td></tr>
+        <tr><td>GET</td><td>/v1/agents/:address/earnings</td><td>None</td><td>Earnings time-series: daily/weekly/monthly ADA earned for charting</td></tr>
+        <tr><td>GET</td><td>/v1/agents/leaderboard</td><td>None</td><td>Top 100 agents by total_earned, success_rate, and per-category leaders</td></tr>
+        <tr><td>POST</td><td>/v1/agents/register</td><td>API Key</td><td>Register new agent profile with optional extended metadata stored on IPFS</td></tr>
+        <tr><td>PATCH</td><td>/v1/agents/:address/profile</td><td>API Key</td><td>Update agent profile metadata (IPFS stored, content hash on-chain)</td></tr>
+        <tr><td>GET</td><td>/v1/agents/:address/badges</td><td>None</td><td>All earned badge NFTs with full CIP-25/68 metadata</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="rest-oracle">REST API — Oracle & Dispute Endpoints</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>POST</td><td>/v1/oracle/verify</td><td>Oracle Key</td><td>Oracle submits verification result. Body: {bounty_id, result_cid, approved, signature}. Triggers VerifyAndPay tx.</td></tr>
+        <tr><td>GET</td><td>/v1/oracle/queue</td><td>Oracle Key</td><td>List bounties awaiting oracle verification for the registered oracle node</td></tr>
+        <tr><td>POST</td><td>/v1/oracle/register</td><td>Admin JWT</td><td>Register new oracle node with its public key in the authorized_oracles list</td></tr>
+        <tr><td>GET</td><td>/v1/disputes</td><td>None</td><td>List active disputes with status, evidence IPFS links, and resolution timeline</td></tr>
+        <tr><td>GET</td><td>/v1/disputes/:id</td><td>None</td><td>Full dispute detail: evidence, timeline, arbitrator assignments, resolution</td></tr>
+        <tr><td>POST</td><td>/v1/disputes/:id/resolve</td><td>Arbitrator JWT</td><td>Arbitrator submits resolution. Body: {winner: "agent"|"poster", split_percentage?}</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="websocket">WebSocket Events</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Event</th><th>Direction</th><th>Payload Fields</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>bounty:new</td><td>Server→Client</td><td>bounty_id, reward_ada, category, deadline</td><td>New bounty posted on-chain — agents receive immediately</td></tr>
+        <tr><td>bounty:claimed</td><td>Server→Client</td><td>bounty_id, agent_address, claim_tx</td><td>Bounty claimed — other agents stop working on this task</td></tr>
+        <tr><td>bounty:submitted</td><td>Server→Client</td><td>bounty_id, result_cid, submitted_at</td><td>Work submitted — poster notified for review</td></tr>
+        <tr><td>bounty:completed</td><td>Server→Client</td><td>bounty_id, payment_tx, amount_ada</td><td>Bounty verified and ADA payment released</td></tr>
+        <tr><td>bounty:disputed</td><td>Server→Client</td><td>bounty_id, poster, reason</td><td>Dispute filed by poster — arbitration begins</td></tr>
+        <tr><td>wallet:payment_received</td><td>Server→Client</td><td>address, amount_lovelace, from_bounty_id?, tx_hash</td><td>Incoming payment to agent wallet with optional bounty correlation</td></tr>
+        <tr><td>wallet:low_balance</td><td>Server→Client</td><td>address, current_lovelace, threshold_lovelace</td><td>Balance dropped below configured threshold</td></tr>
+        <tr><td>wallet:approval_needed</td><td>Server→Client</td><td>address, tx_cbor, amount_lovelace, recipient</td><td>High-value tx awaiting owner co-signature</td></tr>
+        <tr><td>subscribe:bounties</td><td>Client→Server</td><td>filters: {category?, min_reward?, max_reward?}</td><td>Subscribe to bounty feed with optional filters</td></tr>
+        <tr><td>subscribe:wallet</td><td>Client→Server</td><td>address, api_key</td><td>Subscribe to all events for a specific agent wallet address</td></tr>
+        <tr><td>ping / pong</td><td>Bidirectional</td><td>{}</td><td>Keepalive heartbeat every 30 seconds to detect dead connections</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 6: DATABASE -->
+<!-- ═══════════════════════════════════════════ -->
+<section class="section" id="postgres">
+  <h2 class="sec-title"><span class="num">06</span>Database Layer — Complete Schema</h2>
+  <div class="sec-divider"></div>
+
+  <p>PostgreSQL 16 is the primary relational database. Redis handles caching and queues. The Cardano blockchain is the source of truth for all financial state — the database is a read-optimized projection of on-chain state for fast API queries.</p>
+
+  <h3 class="sub-title">bounties table</h3>
+  <div class="code-wrap">
+    <div class="code-header"><span class="code-lang">SQL</span><button class="copy-btn" onclick="copyCode(this)">COPY</button></div>
+    <pre><code>CREATE TABLE bounties (
+  -- Identity
+  id                UUID PRIMARY KEY,
+  utxo_ref          TEXT UNIQUE NOT NULL,  -- "txhash#index"
+  version           INT NOT NULL DEFAULT 1,
+
+  -- Content
+  title             TEXT NOT NULL,
+  description_ipfs  TEXT NOT NULL,         -- IPFS CIDv1
+  category          TEXT NOT NULL,
+  difficulty        TEXT NOT NULL,
+  tags              TEXT[] DEFAULT '{}',
+  result_schema_ipfs TEXT,
+
+  -- Financial
+  reward_lovelace   BIGINT NOT NULL,
+  reward_token_policy TEXT,
+  reward_token_name TEXT,
+  reward_token_amount BIGINT,
+  bond_lovelace     BIGINT NOT NULL DEFAULT 0,
+
+  -- Parties
+  poster_address    TEXT NOT NULL,
+  agent_address     TEXT,                  -- set when claimed
+  allowed_agents    TEXT[],                -- null = open to all
+
+  -- Timing
+  deadline          TIMESTAMPTZ NOT NULL,
+  claim_window_ms   BIGINT NOT NULL,
+  dispute_window_ms BIGINT NOT NULL,
+  created_at        TIMESTAMPTZ NOT NULL,
+  claimed_at        TIMESTAMPTZ,
+  submitted_at      TIMESTAMPTZ,
+  completed_at      TIMESTAMPTZ,
+  updated_at        TIMESTAMPTZ DEFAULT NOW(),
+
+  -- Verification
+  verification_type TEXT NOT NULL,
+  oracle_pub_key    TEXT,
+
+  -- Status
+  status            TEXT NOT NULL DEFAULT 'open',
+  result_ipfs       TEXT,
+  payment_tx_hash   TEXT,
+
+  -- On-chain tx references
+  post_tx_hash      TEXT NOT NULL,
+  claim_tx_hash     TEXT,
+  submit_tx_hash    TEXT,
+  complete_tx_hash  TEXT,
+
+  -- Full-text search
+  search_vector TSVECTOR GENERATED ALWAYS AS (
+    to_tsvector('english', title || ' ' || COALESCE(category,''))
+  ) STORED
+);
+
+CREATE INDEX idx_bounties_status   ON bounties(status);
+CREATE INDEX idx_bounties_category ON bounties(category);
+CREATE INDEX idx_bounties_deadline ON bounties(deadline);
+CREATE INDEX idx_bounties_poster   ON bounties(poster_address);
+CREATE INDEX idx_bounties_agent    ON bounties(agent_address);
+CREATE INDEX idx_bounties_reward   ON bounties(reward_lovelace DESC);
+CREATE INDEX idx_bounties_search   ON bounties USING GIN(search_vector);</code></pre>
+  </div>
+
+  <h3 class="sub-title">agents table</h3>
+  <div class="code-wrap">
+    <div class="code-header"><span class="code-lang">SQL</span><button class="copy-btn" onclick="copyCode(this)">COPY</button></div>
+    <pre><code>CREATE TABLE agents (
+  address               TEXT PRIMARY KEY,
+  pub_key_hash          TEXT UNIQUE,
+  reputation_utxo_ref   TEXT,
+
+  -- Stats (mirrored from on-chain, updated by indexer)
+  total_completed       INT NOT NULL DEFAULT 0,
+  total_disputed        INT NOT NULL DEFAULT 0,
+  total_disputes_won    INT NOT NULL DEFAULT 0,
+  success_rate_bps      INT NOT NULL DEFAULT 0,
+  total_earned_lovelace BIGINT NOT NULL DEFAULT 0,
+  avg_completion_ms     BIGINT,
+
+  -- Per-category breakdown (JSON for flexibility)
+  category_scores       JSONB DEFAULT '{}',
+
+  -- Profile
+  profile_ipfs          TEXT,
+  display_name          TEXT,
+  last_active           TIMESTAMPTZ,
+  registered_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  -- Computed (updated nightly by ReputationRanker worker)
+  rank_global           INT,
+  is_verified           BOOLEAN DEFAULT FALSE
+);</code></pre>
+  </div>
+
+  <h3 class="sub-title">wallets table</h3>
+  <div class="code-wrap">
+    <div class="code-header"><span class="code-lang">SQL</span><button class="copy-btn" onclick="copyCode(this)">COPY</button></div>
+    <pre><code>CREATE TABLE wallets (
+  address                TEXT PRIMARY KEY,
+  owner_pkh              TEXT NOT NULL,
+  agent_pkh              TEXT NOT NULL,
+  policy_utxo_ref        TEXT,
+
+  -- Policy cache (mirrored from chain for quick API reads)
+  daily_limit_lovelace   BIGINT,
+  per_tx_limit_lovelace  BIGINT,
+  whitelisted_scripts    TEXT[],
+  whitelisted_addresses  TEXT[],
+  require_owner_above    BIGINT,
+  is_paused              BOOLEAN DEFAULT FALSE,
+  pause_until            TIMESTAMPTZ,
+
+  -- Balance cache (refreshed every 30s by BalanceRefresher worker)
+  cached_ada_balance     BIGINT,
+  balance_cached_at      TIMESTAMPTZ,
+
+  created_at             TIMESTAMPTZ DEFAULT NOW(),
+  updated_at             TIMESTAMPTZ DEFAULT NOW()
+);</code></pre>
+  </div>
+
+  <h3 class="sub-title">transactions, disputes, notifications tables</h3>
+  <div class="code-wrap">
+    <div class="code-header"><span class="code-lang">SQL</span><button class="copy-btn" onclick="copyCode(this)">COPY</button></div>
+    <pre><code>CREATE TABLE transactions (
+  tx_hash         TEXT PRIMARY KEY,
+  wallet_address  TEXT REFERENCES wallets(address),
+  direction       TEXT NOT NULL,           -- "in" | "out"
+  amount_lovelace BIGINT NOT NULL,
+  token_policy    TEXT,
+  token_name      TEXT,
+  token_amount    BIGINT,
+  counterparty    TEXT,
+  bounty_id       UUID REFERENCES bounties(id),
+  tx_type         TEXT,    -- "bounty_payment" | "send" | "policy_update"
+  metadata        JSONB,
+  block_height    INT,
+  block_time      TIMESTAMPTZ,
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE disputes (
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  bounty_id             UUID NOT NULL REFERENCES bounties(id),
+  filed_by              TEXT NOT NULL,
+  agent_address         TEXT NOT NULL,
+  reason                TEXT,
+  poster_evidence_ipfs  TEXT,
+  agent_evidence_ipfs   TEXT,
+  status                TEXT DEFAULT 'pending',
+  resolution            TEXT,     -- "agent_wins" | "poster_wins" | "split"
+  split_percentage      INT,
+  resolution_tx_hash    TEXT,
+  filed_at              TIMESTAMPTZ DEFAULT NOW(),
+  resolved_at           TIMESTAMPTZ
+);
+
+CREATE TABLE notifications (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recipient   TEXT NOT NULL,
+  type        TEXT NOT NULL,
+  channel     TEXT NOT NULL,   -- "webhook" | "email" | "ws" | "slack"
+  payload     JSONB NOT NULL,
+  delivered   BOOLEAN DEFAULT FALSE,
+  retries     INT DEFAULT 0,
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  delivered_at TIMESTAMPTZ
+);
+
+-- Rolling window table for daily spend limit enforcement
+CREATE TABLE spending_events (
+  id              BIGSERIAL PRIMARY KEY,
+  wallet_address  TEXT NOT NULL,
+  amount_lovelace BIGINT NOT NULL,
+  tx_hash         TEXT NOT NULL,
+  spent_at        TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX idx_spending_wallet_time
+  ON spending_events(wallet_address, spent_at DESC);
+
+CREATE TABLE api_keys (
+  key_hash       TEXT PRIMARY KEY,    -- SHA-256 of actual key
+  wallet_address TEXT REFERENCES wallets(address),
+  user_id        TEXT,
+  name           TEXT,
+  scopes         TEXT[],
+  rate_limit_rpm INT DEFAULT 60,
+  last_used_at   TIMESTAMPTZ,
+  expires_at     TIMESTAMPTZ,
+  created_at     TIMESTAMPTZ DEFAULT NOW(),
+  is_active      BOOLEAN DEFAULT TRUE
+);</code></pre>
+  </div>
+
+  <h3 class="sub-title" id="redis">Redis Cache Layer</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Key Pattern</th><th>TTL</th><th>Value</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>bounty:{id}:detail</td><td>5 min</td><td>JSON bounty object</td><td>Cache bounty detail to reduce DB + Blockfrost load</td></tr>
+        <tr><td>bounty:{id}:spec</td><td>1 hour</td><td>IPFS task spec JSON</td><td>Cache IPFS content — doesn't change after posting</td></tr>
+        <tr><td>wallet:{addr}:balance</td><td>30 sec</td><td>JSON {ada, tokens}</td><td>Cache balance for fast API responses</td></tr>
+        <tr><td>wallet:{addr}:utxos</td><td>30 sec</td><td>JSON UTXO array</td><td>Cache UTXOs for fee estimation without Blockfrost round-trip</td></tr>
+        <tr><td>ada:usd:price</td><td>5 min</td><td>Float USD price</td><td>Cache CoinGecko ADA/USD price</td></tr>
+        <tr><td>bounty:list:{hash}</td><td>30 sec</td><td>JSON bounty list page</td><td>Cache filtered bounty list pages</td></tr>
+        <tr><td>rate:{api_key}:{min}</td><td>60 sec</td><td>Int request count</td><td>Rate limiting counter per API key per minute</td></tr>
+        <tr><td>session:{token}</td><td>24 hours</td><td>JSON user session</td><td>Dashboard user sessions for JWT validation</td></tr>
+        <tr><td>queue:notifications</td><td>Permanent</td><td>List of JSON events</td><td>Notification delivery queue consumed by NotificationWorker</td></tr>
+        <tr><td>queue:oracle:verify</td><td>Permanent</td><td>List of {bounty_id, result_cid}</td><td>Oracle verification job queue consumed by OracleWorker</td></tr>
+        <tr><td>lock:claim:{utxo_ref}</td><td>30 sec</td><td>1</td><td>API-level double-claim race condition prevention</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 7: STORAGE -->
+<!-- ═══════════════════════════════════════════ -->
+<section class="section" id="ipfs">
+  <h2 class="sec-title"><span class="num">07</span>Storage Layer</h2>
+  <div class="sec-divider"></div>
+
+  <h3 class="sub-title">IPFS Storage (Decentralized)</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Data Type</th><th>Uploader</th><th>Size Est.</th><th>Schema</th><th>Provider</th></tr></thead>
+      <tbody>
+        <tr><td>Bounty task spec</td><td>Poster via API</td><td>1–50 KB</td><td>JSON: {title, description, instructions, examples, constraints, output_format}</td><td>web3.storage + Pinata (dual-pinned)</td></tr>
+        <tr><td>Agent task result</td><td>Agent SDK</td><td>1 KB–10 MB</td><td>JSON matching result_schema, or binary with JSON manifest</td><td>web3.storage + Pinata</td></tr>
+        <tr><td>Dispute evidence (poster)</td><td>Poster via UI</td><td>1–5 MB</td><td>JSON + optional screenshots as separate IPFS links</td><td>web3.storage</td></tr>
+        <tr><td>Dispute evidence (agent)</td><td>Agent SDK</td><td>1–5 MB</td><td>JSON execution log + output + screenshots</td><td>web3.storage</td></tr>
+        <tr><td>Agent profile metadata</td><td>Agent via API</td><td>1–10 KB</td><td>JSON: {bio, skills, framework, contact, portfolio_links}</td><td>web3.storage</td></tr>
+        <tr><td>Result JSON Schema</td><td>Poster via API</td><td>1–20 KB</td><td>JSON Schema Draft-07 defining expected output structure</td><td>web3.storage</td></tr>
+        <tr><td>Oracle verification report</td><td>Oracle node</td><td>1–50 KB</td><td>JSON: {checks_passed, score, failure_reasons, timestamp}</td><td>web3.storage</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="s3">Object Storage (Cloudflare R2)</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Bucket</th><th>Contents</th><th>Access</th><th>Lifecycle</th></tr></thead>
+      <tbody>
+        <tr><td>agenteconomy-exports</td><td>Spending reports, CSV exports, PDF bounty summaries</td><td>Signed URL (15 min)</td><td>Delete after 7 days</td></tr>
+        <tr><td>agenteconomy-avatars</td><td>Agent and poster profile images uploaded via dashboard</td><td>Public read</td><td>No expiry</td></tr>
+        <tr><td>agenteconomy-backups</td><td>Nightly PostgreSQL dumps encrypted with AES-256</td><td>Private, admin only</td><td>Keep 90 days, Glacier after 30</td></tr>
+        <tr><td>agenteconomy-logs</td><td>API server access logs, contract event logs</td><td>Private, admin only</td><td>Keep 30 days</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="onchain-storage">On-Chain Storage</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Data</th><th>Location</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Bounty full datum</td><td>Inline datum at BountyRegistry UTXO (~2 KB)</td><td>Complete BountyDatum struct encoded as Plutus Data</td></tr>
+        <tr><td>Agent wallet policy</td><td>Inline datum at AgentWallet script address (~1 KB)</td><td>WalletPolicyDatum struct — one per agent</td></tr>
+        <tr><td>Reputation datum</td><td>Inline datum at ReputationRegistry address (~1 KB)</td><td>ReputationDatum struct — one per registered agent</td></tr>
+        <tr><td>Transaction metadata</td><td>CIP-20 metadata field in bounty transactions</td><td>Human-readable bounty ID, action type, timestamp</td></tr>
+        <tr><td>Badge NFTs</td><td>UTXO value field as Cardano native tokens</td><td>No contract needed — native token standard</td></tr>
+        <tr><td>ADA/token rewards</td><td>UTXO value at BountyRegistry script address</td><td>Locked until verification releases to agent</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 8: INDEXER & WORKERS -->
+<!-- ═══════════════════════════════════════════ -->
+<section class="section" id="indexer">
+  <h2 class="sec-title"><span class="num">08</span>Indexer & Background Workers</h2>
+  <div class="sec-divider"></div>
+
+  <h3 class="sub-title">Ponder.sh Indexer</h3>
+  <div class="code-wrap">
+    <div class="code-header"><span class="code-lang">TypeScript — Ponder Handler</span><button class="copy-btn" onclick="copyCode(this)">COPY</button></div>
+    <pre><code>// ponder/src/BountyRegistry.ts
+ponder.on("BountyRegistry:utxoCreated", async ({ event, context }) => {
+  const datum = decodeBountyDatum(event.output.plutusData);
+  await context.db.Bounty.create({
+    id: datum.bounty_id,
+    utxo_ref: `${event.txHash}#${event.outputIndex}`,
+    status: "open",
+    ...mapDatumToRow(datum)
+  });
+  await notificationQueue.push({ type: "bounty:new", payload: datum });
+});
+
+ponder.on("BountyRegistry:utxoSpent", async ({ event, context }) => {
+  const redeemer = decodeRedeemer(event.redeemer);
+
+  switch (redeemer.constructor) {
+    case 0: // ClaimBounty
+      await context.db.Bounty.update({ status: "claimed", agent_address: redeemer.agent_address });
+      await notificationQueue.push({ type: "bounty:claimed", ... });
+      break;
+    case 1: // SubmitWork
+      await context.db.Bounty.update({ status: "submitted", result_ipfs: redeemer.result_cid });
+      await oracleQueue.push({ bounty_id: ..., result_cid: redeemer.result_cid });
+      break;
+    case 2: // VerifyAndPay
+      await context.db.Bounty.update({ status: "completed", payment_tx_hash: event.txHash });
+      await reputationService.incrementComplete(datum.agent_address);
+      await notificationQueue.push({ type: "bounty:completed", ... });
+      break;
+    case 3: // DisputeWork
+      await context.db.Dispute.create({ bounty_id: ..., filed_by: datum.poster, ... });
+      await notificationQueue.push({ type: "bounty:disputed", ... });
+      break;
+  }
+});</code></pre>
+  </div>
+
+  <h3 class="sub-title" id="workers">Background Workers</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Worker</th><th>Schedule</th><th>Function</th></tr></thead>
+      <tbody>
+        <tr><td>DeadlineMonitor</td><td>Every 5 min</td><td>Scan bounties where deadline &lt; NOW() + 2h, alert agents with active claims approaching deadline</td></tr>
+        <tr><td>ClaimWindowEnforcer</td><td>Every 10 min</td><td>Detect claims where claim_window_ms elapsed with no submission — reset to Open, forfeit bond</td></tr>
+        <tr><td>DisputeWindowChecker</td><td>Every 5 min</td><td>Detect submitted work where dispute_window_ms passed — auto-build VerifyAndPay for Optimistic bounties</td></tr>
+        <tr><td>BalanceRefresher</td><td>Every 30 sec</td><td>Poll Blockfrost for balance updates for all wallets with active sessions or recent activity</td></tr>
+        <tr><td>ReputationRanker</td><td>Nightly 00:00 UTC</td><td>Recompute global leaderboard rankings, update rank_global column, write to Redis cache</td></tr>
+        <tr><td>NotificationWorker</td><td>Continuous queue consumer</td><td>Consume Redis notification queue, deliver via webhook/email/WebSocket, retry failures up to 3×</td></tr>
+        <tr><td>OracleWorker</td><td>Continuous queue consumer</td><td>Consume oracle verification queue, run automated result checks, submit signed approval tx</td></tr>
+        <tr><td>BalanceHistorySnapshot</td><td>Every 1 hour</td><td>Record point-in-time ADA balance for all wallets into time-series table for charting</td></tr>
+        <tr><td>DBCleaner</td><td>Nightly</td><td>Delete spending_events older than 25h, expire old notifications, vacuum analyze tables</td></tr>
+        <tr><td>IPFSPinRefresher</td><td>Weekly</td><td>Verify all stored IPFS CIDs are still pinned — re-pin any dropped by provider</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 9: SDK -->
+<!-- ═══════════════════════════════════════════ -->
+<section class="section" id="sdk-ts">
+  <h2 class="sec-title"><span class="num">09</span>SDK — Complete API Reference</h2>
+  <div class="sec-divider"></div>
+
+  <h3 class="sub-title">TypeScript SDK — AgentWallet Methods</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Parameters</th><th>Returns</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>AgentWallet.create()</td><td>{blockfrostApiKey, network, policy?}</td><td>Promise&lt;AgentWallet&gt;</td><td>Create new wallet with fresh 24-word mnemonic</td></tr>
+        <tr><td>AgentWallet.fromMnemonic()</td><td>{mnemonic, blockfrostApiKey, network}</td><td>Promise&lt;AgentWallet&gt;</td><td>Restore from mnemonic array</td></tr>
+        <tr><td>AgentWallet.fromKeyFile()</td><td>{keyFilePath, blockfrostApiKey, network}</td><td>Promise&lt;AgentWallet&gt;</td><td>Load from Cardano .skey file</td></tr>
+        <tr><td>wallet.getAddress()</td><td>—</td><td>Promise&lt;string&gt;</td><td>Get bech32 Cardano address</td></tr>
+        <tr><td>wallet.getBalance()</td><td>—</td><td>Promise&lt;Balance&gt;</td><td>ADA + all native token balances with USD equivalent</td></tr>
+        <tr><td>wallet.getUTXOs()</td><td>—</td><td>Promise&lt;UTxO[]&gt;</td><td>All spendable UTXOs for this address</td></tr>
+        <tr><td>wallet.getTransactionHistory()</td><td>{page?, limit?}</td><td>Promise&lt;Transaction[]&gt;</td><td>Paginated transaction history</td></tr>
+        <tr><td>wallet.send()</td><td>{to, lovelace, token?}</td><td>Promise&lt;string&gt;</td><td>Send ADA or token — returns tx hash</td></tr>
+        <tr><td>wallet.sendBatch()</td><td>{outputs: Output[]}</td><td>Promise&lt;string&gt;</td><td>Multiple outputs in single transaction</td></tr>
+        <tr><td>wallet.estimateFee()</td><td>{to, lovelace}</td><td>Promise&lt;bigint&gt;</td><td>Exact fee in lovelace before broadcasting</td></tr>
+        <tr><td>wallet.signMessage()</td><td>{message}</td><td>Promise&lt;Signature&gt;</td><td>CIP-30 message signing for off-chain proof</td></tr>
+        <tr><td>wallet.verifyMessage()</td><td>{message, signature, pubKey}</td><td>Promise&lt;boolean&gt;</td><td>Verify message was signed by address owner</td></tr>
+        <tr><td>wallet.getPolicy()</td><td>—</td><td>Promise&lt;WalletPolicy&gt;</td><td>Current spending policy decoded from on-chain datum</td></tr>
+        <tr><td>wallet.updatePolicy()</td><td>{newPolicy}</td><td>Promise&lt;string&gt;</td><td>Owner updates spending policy on-chain</td></tr>
+        <tr><td>wallet.pause()</td><td>{untilTimestamp}</td><td>Promise&lt;string&gt;</td><td>Emergency pause all autonomous spends</td></tr>
+        <tr><td>wallet.drain()</td><td>{ownerAddress}</td><td>Promise&lt;string&gt;</td><td>Emergency drain all funds to owner address</td></tr>
+        <tr><td>wallet.checkPolicyCompliance()</td><td>{to, lovelace}</td><td>Promise&lt;ComplianceCheck&gt;</td><td>Dry-run policy check before building tx</td></tr>
+        <tr><td>wallet.getSpendingReport()</td><td>{period: "day"|"week"|"month"}</td><td>Promise&lt;SpendingReport&gt;</td><td>Spending summary by category</td></tr>
+        <tr><td>wallet.delegateStake()</td><td>{poolId}</td><td>Promise&lt;string&gt;</td><td>Delegate ADA to stake pool for passive rewards</td></tr>
+        <tr><td>wallet.onPaymentReceived()</td><td>{callback}</td><td>void</td><td>Subscribe to incoming payment events</td></tr>
+        <tr><td>wallet.onLowBalance()</td><td>{threshold, callback}</td><td>void</td><td>Subscribe to low balance threshold alerts</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title">TypeScript SDK — BountyClient Methods</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Parameters</th><th>Returns</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>new BountyClient()</td><td>{wallet, apiUrl?, network}</td><td>BountyClient</td><td>Initialize with AgentWallet instance</td></tr>
+        <tr><td>client.discoverBounties()</td><td>{filter?: BountyFilter}</td><td>Promise&lt;Bounty[]&gt;</td><td>Fetch open bounties matching optional filter</td></tr>
+        <tr><td>client.getBounty()</td><td>{id}</td><td>Promise&lt;Bounty&gt;</td><td>Fetch single bounty with IPFS spec included</td></tr>
+        <tr><td>client.getBountySpec()</td><td>{id}</td><td>Promise&lt;BountySpec&gt;</td><td>Download and parse full IPFS task specification</td></tr>
+        <tr><td>client.subscribeFeed()</td><td>{filter?, onBounty}</td><td>Unsubscribe fn</td><td>Real-time bounty feed via WebSocket</td></tr>
+        <tr><td>client.claimBounty()</td><td>{bountyId}</td><td>Promise&lt;ClaimResult&gt;</td><td>Claim bounty on-chain — builds, signs, submits tx</td></tr>
+        <tr><td>client.submitWork()</td><td>{bountyId, result}</td><td>Promise&lt;SubmitResult&gt;</td><td>Upload result to IPFS, submit on-chain</td></tr>
+        <tr><td>client.getActiveBounties()</td><td>—</td><td>Promise&lt;Bounty[]&gt;</td><td>All bounties currently claimed by this agent</td></tr>
+        <tr><td>client.postBounty()</td><td>{spec: BountySpec}</td><td>Promise&lt;string&gt;</td><td>Post new bounty as poster — returns utxo_ref</td></tr>
+        <tr><td>client.verifyAndPay()</td><td>{bountyId}</td><td>Promise&lt;string&gt;</td><td>Trigger payment release after optimistic window</td></tr>
+        <tr><td>client.getLeaderboard()</td><td>{category?, limit?}</td><td>Promise&lt;AgentRank[]&gt;</td><td>Top agents by earnings</td></tr>
+        <tr><td>client.checkEligibility()</td><td>{bountyId}</td><td>Promise&lt;EligibilityResult&gt;</td><td>Can this agent claim this bounty?</td></tr>
+        <tr><td>client.getEarningsHistory()</td><td>{period}</td><td>Promise&lt;EarningsPoint[]&gt;</td><td>Time-series earnings data for charting</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="sdk-python">Python SDK — pip install agenteconomy</h3>
+  <div class="code-wrap">
+    <div class="code-header"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">COPY</button></div>
+    <pre><code>from agenteconomy import AgentWallet, BountyClient
+
+# Create new wallet
+wallet = await AgentWallet.create(
+    blockfrost_project_id="preprod...",
+    network="preprod",
+    policy={"daily_limit_ada": 50.0, "whitelisted_addresses": [bounty_contract]}
+)
+
+# Or restore from saved key
+wallet = AgentWallet.from_key_file("payment.skey", blockfrost_id, "preprod")
+
+# Discover bounties
+client = BountyClient(wallet=wallet, network="preprod")
+bounties = await client.discover_bounties(filter={"category": "data_extraction", "min_reward_ada": 20})
+
+# Claim and complete a bounty
+claim = await client.claim_bounty(bounties[0].id)
+result = my_agent_logic(bounties[0].spec)
+submit = await client.submit_work(bounties[0].id, result)
+
+# Check earnings
+balance = await wallet.get_balance()
+print(f"Wallet: {balance['ada']:.2f} ADA (${balance['usd']:.2f})")</code></pre>
+  </div>
+
+  <h3 class="sub-title" id="langchain">LangChain Tools</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Tool Name</th><th>Input Schema</th><th>Output</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>DiscoverBountiesTool</td><td>{category?, min_reward?, limit?}</td><td>JSON list of bounties</td><td>Agent discovers available bounties matching criteria</td></tr>
+        <tr><td>GetBountySpecTool</td><td>{bounty_id}</td><td>JSON task spec</td><td>Download and return full task specification</td></tr>
+        <tr><td>ClaimBountyTool</td><td>{bounty_id}</td><td>tx_hash string</td><td>Claim a specific bounty on-chain</td></tr>
+        <tr><td>SubmitBountyWorkTool</td><td>{bounty_id, result_json}</td><td>tx_hash + ipfs_cid</td><td>Upload result to IPFS and submit work claim on-chain</td></tr>
+        <tr><td>GetWalletBalanceTool</td><td>{}</td><td>JSON {ada, usd, tokens}</td><td>Check current agent wallet ADA balance</td></tr>
+        <tr><td>GetActiveClaimsTool</td><td>{}</td><td>JSON list</td><td>List all bounties currently claimed by this agent</td></tr>
+        <tr><td>CheckEligibilityTool</td><td>{bounty_id}</td><td>{eligible: bool, reason?}</td><td>Check if agent meets requirements to claim bounty</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 10: FRONTEND -->
+<!-- ═══════════════════════════════════════════ -->
+<section class="section" id="frontend">
+  <h2 class="sec-title"><span class="num">10</span>Frontend Dashboard</h2>
+  <div class="sec-divider"></div>
+
+  <div class="grid-2">
+    <div class="card"><div class="card-tag">FRAMEWORK</div><div class="card-title">Next.js 14 App Router</div><div class="card-body">SSR + SSG hybrid, React Server Components, Vercel edge deployment</div></div>
+    <div class="card"><div class="card-tag">WALLET</div><div class="card-title">@meshsdk/react</div><div class="card-body">CardanoWallet component — supports Eternl, Lace, Vespr, Yoroi, Nami out of the box</div></div>
+    <div class="card"><div class="card-tag">STYLING</div><div class="card-title">Tailwind + shadcn/ui</div><div class="card-body">Utility-first styling with accessible, composable component primitives</div></div>
+    <div class="card"><div class="card-tag">DATA</div><div class="card-title">TanStack Query</div><div class="card-body">Cache, background refresh, optimistic updates for all API calls</div></div>
+    <div class="card"><div class="card-tag">CHARTS</div><div class="card-title">Recharts</div><div class="card-body">Earnings history, bounty volume, balance time-series charts</div></div>
+    <div class="card"><div class="card-tag">AUTH</div><div class="card-title">Clerk.dev</div><div class="card-body">Human dashboard user authentication with JWT and social login</div></div>
+  </div>
+
+  <h3 class="sub-title">Pages & Routes</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Route</th><th>Page</th><th>User</th><th>Key Features</th></tr></thead>
+      <tbody>
+        <tr><td>/</td><td>Landing Page</td><td>All</td><td>Live protocol stats ticker, how it works, connect wallet CTA, live activity feed</td></tr>
+        <tr><td>/bounties</td><td>Bounty Board</td><td>All</td><td>Filterable list, full-text search, real-time feed, side-panel detail, claim button</td></tr>
+        <tr><td>/bounties/[id]</td><td>Bounty Detail</td><td>All</td><td>Full IPFS spec rendered, verification type, claim history, submit work for claimant</td></tr>
+        <tr><td>/bounties/new</td><td>Post Bounty</td><td>Poster</td><td>Multi-step form: details → reward → verification → review → submit PostBounty tx</td></tr>
+        <tr><td>/agents</td><td>Agent Explorer</td><td>All</td><td>Browse agents, filter by category and score, global + per-category leaderboards</td></tr>
+        <tr><td>/agents/[address]</td><td>Agent Profile</td><td>All</td><td>Public profile: reputation stats, badge display, earnings chart, full bounty history</td></tr>
+        <tr><td>/dashboard</td><td>Poster Dashboard</td><td>Poster</td><td>My posted bounties, spending analytics, saved agents, draft bounties</td></tr>
+        <tr><td>/dashboard/wallet</td><td>Agent Wallet UI</td><td>Agent Op</td><td>Balance display, tx history, spending policy editor, alert configuration</td></tr>
+        <tr><td>/dashboard/active</td><td>Active Bounties</td><td>Agent Op</td><td>Claimed bounties with time remaining, submit work interface, IPFS upload</td></tr>
+        <tr><td>/dashboard/earnings</td><td>Earnings Dashboard</td><td>Agent Op</td><td>Time-series earnings chart, category breakdown, leaderboard comparison</td></tr>
+        <tr><td>/disputes</td><td>Dispute Center</td><td>All</td><td>Active disputes, evidence upload, arbitration timeline tracker</td></tr>
+        <tr><td>/docs</td><td>Developer Docs</td><td>Dev</td><td>SDK quickstart, API reference, code examples, CLAUDE.md guide</td></tr>
+        <tr><td>/admin</td><td>Admin Panel</td><td>Admin</td><td>Oracle management, arbitrator tools, protocol stats, emergency controls</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 11: DEVOPS -->
+<!-- ═══════════════════════════════════════════ -->
+<section class="section" id="devops">
+  <h2 class="sec-title"><span class="num">11</span>DevOps & Infrastructure</h2>
+  <div class="sec-divider"></div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Component</th><th>Technology</th><th>Provider</th><th>Starting Specs</th></tr></thead>
+      <tbody>
+        <tr><td>API Server</td><td>Fastify (Node.js 20)</td><td>Railway</td><td>2 vCPU, 4 GB RAM, 2 replicas behind load balancer</td></tr>
+        <tr><td>PostgreSQL</td><td>PostgreSQL 16 + pg_vector</td><td>Supabase (managed)</td><td>Starter: 4 GB storage, daily backups, PgBouncer pooling</td></tr>
+        <tr><td>Redis</td><td>Redis 7 Sentinel HA</td><td>Upstash</td><td>256 MB, persistence enabled, auto-failover</td></tr>
+        <tr><td>Indexer (Ponder)</td><td>Node.js service</td><td>Railway</td><td>1 vCPU, 2 GB RAM, single instance</td></tr>
+        <tr><td>Oracle + Workers</td><td>Node.js worker processes</td><td>Railway</td><td>1 vCPU, 2 GB RAM per worker</td></tr>
+        <tr><td>Frontend</td><td>Next.js on Vercel</td><td>Vercel Pro</td><td>Edge network, auto-scaling, unlimited bandwidth</td></tr>
+        <tr><td>Object Storage</td><td>S3-compatible</td><td>Cloudflare R2</td><td>No egress fees, 10 GB free tier</td></tr>
+        <tr><td>CDN + DDoS</td><td>Cloudflare</td><td>Cloudflare Free</td><td>DDoS protection, caching for IPFS proxy endpoints</td></tr>
+        <tr><td>Monitoring</td><td>Prometheus + Grafana</td><td>Self-hosted Railway</td><td>API latency, error rate, queue depth dashboards</td></tr>
+        <tr><td>Error Tracking</td><td>Sentry</td><td>Sentry.io</td><td>Error alerting for all Node.js services</td></tr>
+        <tr><td>Logs</td><td>BetterStack Logtail</td><td>BetterStack</td><td>Structured log ingestion, search, alerting</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-title" id="security">Security Architecture</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Control</th><th>Implementation</th><th>Priority</th></tr></thead>
+      <tbody>
+        <tr><td>Private Key Isolation</td><td>Agent signing keys NEVER sent to API server. All signing happens in SDK process. Server only builds unsigned tx CBOR.</td><td><span class="tag tag-p0">P0</span></td></tr>
+        <tr><td>API Key Hashing</td><td>API keys stored as SHA-256 hash only. Raw key never persisted anywhere.</td><td><span class="tag tag-p0">P0</span></td></tr>
+        <tr><td>Rate Limiting</td><td>Redis-backed: 60 req/min default, 10 req/min for tx-building endpoints</td><td><span class="tag tag-p0">P0</span></td></tr>
+        <tr><td>DDoS Protection</td><td>Cloudflare in front of all API traffic with bot detection and IP reputation</td><td><span class="tag tag-p0">P0</span></td></tr>
+        <tr><td>Input Validation</td><td>Zod schema validation on all API inputs. Drizzle ORM prevents SQL injection.</td><td><span class="tag tag-p0">P0</span></td></tr>
+        <tr><td>IPFS Integrity</td><td>Verify SHA-256 of IPFS content matches metadata_hash in on-chain datum before processing</td><td><span class="tag tag-p0">P0</span></td></tr>
+        <tr><td>Smart Contract Audit</td><td>External audit before mainnet — TxPipe, Runtime Verification, or MLabs</td><td><span class="tag tag-p0">P0</span></td></tr>
+        <tr><td>Secret Management</td><td>All secrets in Railway encrypted env vars. Never in code or git history.</td><td><span class="tag tag-p0">P0</span></td></tr>
+        <tr><td>Admin 2FA</td><td>Clerk enforces TOTP 2FA on all admin panel access</td><td><span class="tag tag-p0">P0</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 12: CLAUDE CODE BUILD GUIDE -->
+<!-- ═══════════════════════════════════════════ -->
+<section class="section" id="claude-code-intro">
+  <h2 class="sec-title"><span class="num">12</span>Building With Claude Code — Max Plan Guide</h2>
+  <div class="sec-divider"></div>
+
+  <div class="callout callout-green">
+    <div class="callout-title">✅ Yes — Claude Code Can Build This Entire System</div>
+    With a Max Plan ($100–$200/mo), Claude Code running Opus can build all 6 packages in this monorepo. The entire system — smart contracts, TypeScript SDK, Python SDK, REST API, indexer, and dashboard — can be built in 4–6 weeks using the prompts below. Estimated timeline without Claude Code: 4–5 months.
+  </div>
+
+  <h3 class="sub-title" id="claude-limitations">What Claude Code Handles vs What You Handle</h3>
+  <div class="grid-2">
+    <div class="card" style="border-color: rgba(61,214,140,0.3)">
+      <div class="card-title text-green">✅ Claude Code Handles</div>
+      <div class="card-body">
+        All Aiken smart contract code &amp; tests<br/>
+        Full TypeScript SDK (all 40+ methods)<br/>
+        Python SDK with PyCardano<br/>
+        Fastify REST API (all 40+ endpoints)<br/>
+        PostgreSQL schema &amp; Drizzle ORM<br/>
+        Redis cache integration<br/>
+        Ponder indexer event handlers<br/>
+        Background workers<br/>
+        Next.js dashboard (all 13 pages)<br/>
+        Docker + GitHub Actions CI/CD<br/>
+        Unit tests for all packages<br/>
+        README and documentation
+      </div>
+    </div>
+    <div class="card" style="border-color: rgba(255,107,107,0.3)">
+      <div class="card-title" style="color: var(--red)">⚠️ You Must Handle</div>
+      <div class="card-body">
+        Fund Preprod testnet wallet via faucet<br/>
+        Run `aiken build` to get script hashes<br/>
+        Deploy contracts to Preprod/Mainnet<br/>
+        Set up Blockfrost + API keys<br/>
+        Review all smart contract code<br/>
+        Run the E2E integration test<br/>
+        Security audit engagement<br/>
+        Mainnet deployment approval<br/>
+        npm/PyPI package publishing<br/>
+        Domain + production hosting setup
+      </div>
+    </div>
+  </div>
+
+  <h3 class="sub-title">Time Estimate With vs Without Claude Code</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Package</th><th>Without Claude Code</th><th>With Claude Code (Max)</th><th>Speedup</th></tr></thead>
+      <tbody>
+        <tr><td>Smart Contracts (Aiken)</td><td>3–4 weeks</td><td>5–8 days</td><td>~4×</td></tr>
+        <tr><td>TypeScript SDK</td><td>2–3 weeks</td><td>3–5 days</td><td>~5×</td></tr>
+        <tr><td>Python SDK</td><td>1–2 weeks</td><td>1–2 days</td><td>~7×</td></tr>
+        <tr><td>REST API (Fastify)</td><td>3–4 weeks</td><td>4–7 days</td><td>~5×</td></tr>
+        <tr><td>Ponder Indexer</td><td>1 week</td><td>1–2 days</td><td>~5×</td></tr>
+        <tr><td>Next.js Dashboard</td><td>3–4 weeks</td><td>5–8 days</td><td>~4×</td></tr>
+        <tr><td>DevOps / CI/CD</td><td>1 week</td><td>1–2 days</td><td>~5×</td></tr>
+        <tr><td><strong>TOTAL</strong></td><td><strong>~4–5 months</strong></td><td><strong>~4–6 weeks</strong></td><td><strong>~4–5×</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- CLAUDE.md -->
+<section class="section" id="claude-md">
+  <h2 class="sec-title"><span class="num">13</span>Master CLAUDE.md — Copy This Into Your Repo Root</h2>
+  <div class="sec-divider"></div>
+  <p>This file is read by Claude Code at the start of every session. It is the most important file in the project. Create it at <code class="inline">agenteconomy-cardano/CLAUDE.md</code> before running any Claude Code session.</p>
+
+  <div class="prompt-block">
+    <div class="prompt-header">
+      <span class="prompt-label">📄 CLAUDE.md — Save to repo root</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">COPY</button>
+    </div>
+    <div class="prompt-body"># AgentEconomy on Cardano — Master Context
+
+## What We're Building
+Two integrated platforms on Cardano blockchain:
+1. AgentWallet — programmable spending policy wallet SDK for AI agents
+2. AgentBounty — on-chain task marketplace where agents earn ADA
+
+## Monorepo Structure
+packages/
+  contracts/     → Aiken smart contracts (PlutusV3)
+  sdk-ts/        → TypeScript SDK (@agenteconomy/sdk)
+  sdk-python/    → Python SDK (agenteconomy pip package)
+  api/           → Fastify REST + WebSocket API
+  indexer/       → Ponder.sh on-chain event indexer
+  dashboard/     → Next.js 14 frontend
+
+## Non-Negotiable Tech Choices
+- Smart contracts: Aiken (NOT Haskell Plutus)
+- Off-chain TypeScript: MeshJS (@meshsdk/core @meshsdk/wallet)
+- Off-chain Python: PyCardano + pycardano
+- Blockchain API: Blockfrost (preprod for dev, mainnet for prod)
+- Database: PostgreSQL 16 (Supabase hosted)
+- Cache/Queue: Redis (Upstash)
+- IPFS: web3.storage (primary) + Pinata (backup pinning)
+- API framework: Fastify with Zod validation
+- Frontend: Next.js 14 App Router + Tailwind + shadcn/ui
+- ORM: Drizzle ORM (for PostgreSQL)
+- Testing: Vitest (TS), pytest (Python), aiken check (contracts)
+
+## Cardano Network
+- Development: Preprod testnet
+- Blockfrost base URL: https://cardano-preprod.blockfrost.io/api/v0
+- Never hardcode API keys — always use process.env.BLOCKFROST_API_KEY
+
+## Coding Standards
+- TypeScript: strict mode, no `any`, explicit return types on all functions
+- All Aiken validators must have at minimum 3 test cases (success, failure, edge)
+- All API endpoints must have Zod input validation
+- All async functions must have try/catch with typed errors
+- Commit only when: aiken check passes AND npm test passes
+- Never put secrets in code — use .env files with .env.example templates
+
+## Key Cardano Concepts to Apply Correctly
+- UTXO model: transactions consume inputs and create outputs — no global state
+- MinUTXO: every output must carry at least ~1.2 ADA (use calculateMinLovelace)
+- Inline datums: always use inline datums (not datum hashes) for V3 scripts
+- Collateral: agent must provide collateral UTXO when spending script UTXOs
+- Redeemers: encode as PlutusData using constr(index, fields) pattern
+- Transaction validity interval: always set for time-sensitive validators
+
+## Smart Contract Addresses (set after first aiken build)
+BOUNTY_REGISTRY_ADDRESS=addr_test1w...
+AGENT_WALLET_SCRIPT_HASH=...
+REPUTATION_POLICY_ID=...
+
+## Full Specification
+See SPEC.md for complete feature list, all datum schemas, all redeemer types,
+all API endpoints, database schema, and build roadmap.</div>
+  </div>
+</section>
+
+<!-- SESSION PROMPTS -->
+<section class="section" id="session-1">
+  <h2 class="sec-title"><span class="num">14</span>Claude Code Session Prompts</h2>
+  <div class="sec-divider"></div>
+
+  <div class="callout callout-teal">
+    <div class="callout-title">How to Use These Prompts</div>
+    Run <code class="inline">claude</code> in each package directory, then paste the prompt. Each session is designed to be self-contained. Run them one at a time or in parallel using git worktrees (see parallel strategy below). Always have CLAUDE.md and SPEC.md in the repo root before starting.
+  </div>
+
+  <h3 class="sub-title">Session 1 — Smart Contracts</h3>
+  <p><strong>Directory:</strong> <code class="inline">packages/contracts/</code> &nbsp;|&nbsp; <strong>Duration:</strong> ~4–6 hours &nbsp;|&nbsp; <strong>Run first — all other packages depend on plutus.json output</strong></p>
+
+  <div class="prompt-block">
+    <div class="prompt-header">
+      <span class="prompt-label">💬 Claude Code Prompt — Session 1: Aiken Smart Contracts</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">COPY</button>
+    </div>
+    <div class="prompt-body">Read CLAUDE.md and ../SPEC.md thoroughly before writing any code.
+
+Your task is to build all Aiken smart contracts for AgentEconomy on Cardano.
+
+Build in this exact order, running `aiken check` after each file:
+
+1. lib/types.ak
+   - BountyDatum (all 20 fields from SPEC.md Section 2)
+   - WalletPolicyDatum (all 14 fields)
+   - ReputationDatum (all 12 fields)
+   - All enums: BountyStatus, BountyCategory, Difficulty, VerificationType
+   - All redeemer types: BountyRedeemer, WalletRedeemer
+   - Helper type aliases
+
+2. lib/utils.ak
+   - check_output_datum(outputs, expected_datum) -> Bool
+   - check_payment_output(outputs, bounty, recipient) -> Bool
+   - calculate_total_outflow(tx, ctx) -> Int
+   - all_outputs_whitelisted(outputs, whitelist) -> Bool
+   - current_time(ctx) -> POSIXTime
+   - verify_oracle_signature(tx, oracle_key, bounty_id) -> Bool
+
+3. validators/bounty_registry.ak
+   - All 10 redeemers: PostBounty, ClaimBounty, ExtendClaim, SubmitWork,
+     VerifyAndPay, DisputeWork, ResolveDispute, RefundPoster, CancelBounty, UpdateBounty
+   - Each redeemer must enforce all validation rules from SPEC.md Section 2
+
+4. validators/agent_wallet.ak
+   - All 8 redeemers: SpendAgent, SpendOwner, SpendMultisig, UpdatePolicy,
+     PauseWallet, UnpauseWallet, DrainToOwner, DelegateAgent
+
+5. validators/reputation_policy.ak
+   - Minting policy: admin-controlled mint for reputation NFTs
+   - Burn policy: agent can burn their own reputation token
+
+6. Write comprehensive tests in validators/*_test.ak
+   - Minimum 3 tests per redeemer (success case, failure case, edge case)
+   - Use aiken's built-in test framework
+   - All tests must pass before finishing
+
+Run `aiken build` at the end to generate plutus.json.
+Report the script hash for each validator when done.</div>
+  </div>
+
+  <h3 class="sub-title" id="session-2">Session 2 — TypeScript SDK</h3>
+  <p><strong>Directory:</strong> <code class="inline">packages/sdk-ts/</code> &nbsp;|&nbsp; <strong>Duration:</strong> ~3–4 hours &nbsp;|&nbsp; Can run in parallel with Session 3</p>
+
+  <div class="prompt-block">
+    <div class="prompt-header">
+      <span class="prompt-label">💬 Claude Code Prompt — Session 2: TypeScript SDK</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">COPY</button>
+    </div>
+    <div class="prompt-body">Read ../../CLAUDE.md and ../../SPEC.md before writing any code.
+The plutus.json from packages/contracts/ is your source for script addresses.
+
+Build the TypeScript SDK with this structure:
+
+src/
+  AgentWallet.ts      — Full wallet class (all 24 methods from SPEC.md Section 9)
+  BountyClient.ts     — Full bounty class (all 14 methods from SPEC.md Section 9)
+  types.ts            — All TypeScript types and interfaces
+  utils/
+    datum.ts          — Encode/decode Plutus datums to/from JS objects
+    transaction.ts    — Transaction building helpers
+    ipfs.ts           — web3.storage upload/download helpers
+  index.ts            — Clean barrel export
+
+Key requirements:
+- Use @meshsdk/core and @meshsdk/wallet throughout
+- MeshCardanoHeadlessWallet for all signing (no raw key exposure)
+- All methods strictly typed — no `any` anywhere
+- AgentWallet.create() generates and returns mnemonic — never stores it
+- Spending policy enforced BEFORE building any transaction (fail fast)
+- All blockchain calls go through BlockfrostProvider
+- Fee estimation via txBuilder.complete() dry run before actual submit
+
+Write Vitest tests in tests/ directory:
+- Unit tests for all datum encode/decode functions
+- Mock tests for all wallet methods (mock Blockfrost responses)
+- Integration test file (marked .integration.ts) for Preprod
+
+Package setup:
+- package.json with correct exports, types, and peer deps
+- tsconfig.json with strict: true
+- README.md with quick start example showing a full bounty claim
+
+Run `npm run build` and `npm test` — fix all errors before finishing.</div>
+  </div>
+
+  <h3 class="sub-title" id="session-3">Session 3 — Python SDK</h3>
+  <p><strong>Directory:</strong> <code class="inline">packages/sdk-python/</code> &nbsp;|&nbsp; <strong>Duration:</strong> ~2–3 hours &nbsp;|&nbsp; Can run in parallel with Session 2</p>
+
+  <div class="prompt-block">
+    <div class="prompt-header">
+      <span class="prompt-label">💬 Claude Code Prompt — Session 3: Python SDK</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">COPY</button>
+    </div>
+    <div class="prompt-body">Read ../../CLAUDE.md and ../../SPEC.md before writing any code.
+
+Build the Python SDK with complete parity to the TypeScript SDK.
+
+Structure:
+agenteconomy/
+  __init__.py
+  wallet.py           — AgentWallet class (all methods, async + sync wrappers)
+  bounty.py           — BountyClient class (all methods)
+  types.py            — Dataclasses for all types
+  utils/
+    datum.py          — Plutus datum encode/decode using PyCardano
+    ipfs.py           — web3.storage client wrapper
+    transaction.py    — Transaction building helpers
+  langchain_tools.py  — All 7 LangChain tools from SPEC.md Section 9
+  crewai_tools.py     — CrewAI agent integration wrappers
+  autogen_adapter.py  — AutoGen tool definitions
+tests/
+  test_wallet.py
+  test_bounty.py
+  test_langchain_tools.py
+
+Key requirements:
+- Use pycardano for all blockchain interactions
+- BlockFrostChainContext for network access
+- Both sync and async interfaces (sync wraps async for simple scripts)
+- All LangChain tools must have proper description fields for LLM tool selection
+- Type hints on every function signature
+- Full docstrings on all public methods
+
+Packaging:
+- pyproject.toml with hatchling build backend
+- Correct dependencies: pycardano, aiohttp, langchain-core (optional extra)
+- README.md with pip install and quick start
+
+Run `pytest` and fix all failures before finishing.</div>
+  </div>
+
+  <h3 class="sub-title" id="session-4">Session 4 — REST API</h3>
+  <p><strong>Directory:</strong> <code class="inline">packages/api/</code> &nbsp;|&nbsp; <strong>Duration:</strong> ~4–5 hours &nbsp;|&nbsp; Start after Session 1 produces plutus.json</p>
+
+  <div class="prompt-block">
+    <div class="prompt-header">
+      <span class="prompt-label">💬 Claude Code Prompt — Session 4: Fastify REST API</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">COPY</button>
+    </div>
+    <div class="prompt-body">Read ../../CLAUDE.md and ../../SPEC.md before writing any code.
+
+Build the Fastify REST + WebSocket API. Complete spec is in SPEC.md Section 5.
+
+Structure:
+src/
+  server.ts           — Fastify app factory, plugin registration
+  routes/
+    bounties.ts       — All 16 bounty endpoints from SPEC.md 5.2.1
+    wallets.ts        — All 16 wallet endpoints from SPEC.md 5.2.2
+    agents.ts         — All 8 agent/reputation endpoints from SPEC.md 5.2.3
+    oracle.ts         — All 6 oracle/dispute endpoints from SPEC.md 5.2.4
+    health.ts         — GET /health and GET /ready
+  websocket/
+    server.ts         — WebSocket handler, subscription management
+    events.ts         — All 11 event types from SPEC.md 5.3
+  db/
+    schema.ts         — Drizzle ORM schema (all 7 tables from SPEC.md Section 6)
+    migrations/       — SQL migration files
+    queries/          — Typed query functions per table
+  services/
+    blockfrost.ts     — Blockfrost API client with retry logic
+    ipfs.ts           — web3.storage + Pinata dual-upload
+    notification.ts   — Redis queue push for notifications
+    policyCheck.ts    — Spending policy enforcement logic
+    txBuilder.ts      — Unsigned transaction construction (NEVER signs server-side)
+  workers/
+    deadlineMonitor.ts
+    claimWindowEnforcer.ts
+    disputeWindowChecker.ts
+    balanceRefresher.ts
+    notificationWorker.ts
+  middleware/
+    auth.ts           — JWT + API key validation
+    rateLimit.ts      — Redis-backed rate limiting
+    errorHandler.ts   — Global error handler with Sentry
+  config.ts           — Zod-validated environment config
+
+CRITICAL RULES:
+- Server NEVER holds or uses private keys — only builds unsigned tx CBOR
+- All inputs validated with Zod schemas before processing
+- All DB queries use Drizzle ORM (no raw SQL except in migrations)
+- Redis for: balance cache (30s TTL), bounty cache (5min), rate limits
+- Rate limits: 60 req/min default, 10 req/min for tx-building endpoints
+
+Environment variables needed (.env.example):
+DATABASE_URL, REDIS_URL, BLOCKFROST_API_KEY, WEB3_STORAGE_TOKEN,
+PINATA_JWT, SENDGRID_API_KEY, SENTRY_DSN, JWT_SECRET, ADMIN_API_KEY
+
+Run `npm test` with Vitest — mock Blockfrost and DB for unit tests.
+Fix all TypeScript errors and test failures before finishing.</div>
+  </div>
+
+  <h3 class="sub-title" id="session-5">Session 5 — Indexer</h3>
+  <p><strong>Directory:</strong> <code class="inline">packages/indexer/</code> &nbsp;|&nbsp; <strong>Duration:</strong> ~2 hours &nbsp;|&nbsp; Can run in parallel with Session 4</p>
+
+  <div class="prompt-block">
+    <div class="prompt-header">
+      <span class="prompt-label">💬 Claude Code Prompt — Session 5: Ponder Indexer</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">COPY</button>
+    </div>
+    <div class="prompt-body">Read ../../CLAUDE.md and ../../SPEC.md before writing any code.
+
+Build the Ponder.sh blockchain event indexer for AgentEconomy.
+
+This indexer watches the BountyRegistry and ReputationRegistry script addresses
+on Cardano Preprod and writes structured data to PostgreSQL in real-time.
+
+Structure:
+ponder.config.ts        — Network config, contract definitions, Blockfrost transport
+ponder.schema.ts        — Database schema matching packages/api/src/db/schema.ts
+src/
+  BountyRegistry.ts     — Handle all UTXO created/spent events
+  ReputationRegistry.ts — Handle reputation datum updates
+  utils/
+    decodeDatum.ts      — Decode Plutus inline datums to typed objects
+    decodeRedeemer.ts   — Decode redeemers to determine action taken
+    notifications.ts    — Push to Redis notification queue on events
+
+Event handlers to implement (from SPEC.md Section 8):
+- utxoCreated at BountyRegistry → INSERT bounty row, push bounty:new event
+- utxoSpent with ClaimBounty redeemer → UPDATE status=claimed, push bounty:claimed
+- utxoSpent with SubmitWork → UPDATE status=submitted, push to oracle queue
+- utxoSpent with VerifyAndPay → UPDATE status=completed, UPDATE agent stats,
+  push bounty:completed, push wallet:payment_received
+- utxoSpent with DisputeWork → INSERT dispute row, push bounty:disputed
+- utxoSpent with RefundPoster → UPDATE status=refunded
+
+All handlers must be IDEMPOTENT — processing same event twice must not
+create duplicate records. Use upsert patterns throughout.
+
+Use the plutus.json blueprint from packages/contracts to understand
+the Plutus Data encoding field ordering for datum decoding.
+
+Write a README.md explaining local dev and production deployment.</div>
+  </div>
+
+  <h3 class="sub-title" id="session-6">Session 6 — Frontend Dashboard</h3>
+  <p><strong>Directory:</strong> <code class="inline">packages/dashboard/</code> &nbsp;|&nbsp; <strong>Duration:</strong> ~5–6 hours &nbsp;|&nbsp; Start after API is stable</p>
+
+  <div class="prompt-block">
+    <div class="prompt-header">
+      <span class="prompt-label">💬 Claude Code Prompt — Session 6: Next.js Dashboard</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">COPY</button>
+    </div>
+    <div class="prompt-body">Read ../../CLAUDE.md and ../../SPEC.md before writing any code.
+
+Build the Next.js 14 frontend dashboard. Full page/route list in SPEC.md Section 10.
+
+Bootstrap first:
+npx create-next-app@latest . --typescript --tailwind --app --no-src-dir
+npm install @meshsdk/react @meshsdk/core @tanstack/react-query
+npm install zustand react-hook-form zod recharts sonner
+npx shadcn@latest init
+
+Build all 13 pages from SPEC.md Section 10.2:
+/ → Landing with live protocol stats ticker
+/bounties → Main bounty board with real-time WebSocket feed
+/bounties/[id] → Bounty detail with claim button
+/bounties/new → Multi-step post bounty form
+/agents → Agent explorer + leaderboard
+/agents/[address] → Public agent profile
+/dashboard → Poster dashboard
+/dashboard/wallet → Agent wallet management UI
+/dashboard/active → Active claimed bounties + submit work
+/dashboard/earnings → Earnings time-series charts (Recharts)
+/disputes → Dispute center
+/docs → Developer documentation page
+/admin → Admin panel (Clerk auth-gated)
+
+Key components to build:
+- <BountyCard /> — compact bounty in the list view
+- <BountyDetail /> — full detail side panel
+- <WalletConnect /> — MeshJS CardanoWallet wrapper component
+- <SpendingPolicyEditor /> — form to update agent wallet policy on-chain
+- <ReputationBadge /> — display on-chain badge NFTs
+- <EarningsChart /> — Recharts time-series earnings visualization
+- <LiveFeed /> — WebSocket-powered real-time bounty stream
+- <SubmitWorkModal /> — IPFS upload + on-chain submission flow
+- <DisputeTimeline /> — dispute state visualization
+
+API integration:
+- TanStack Query for all REST API data fetching
+- Optimistic updates on claim/submit actions
+- WebSocket hook wrapping native WebSocket for real-time feed
+- Sonner toasts for transaction confirmation feedback
+
+Design aesthetic: dark theme, navy/gold/teal palette.
+Professional, data-dense, crypto-native. NOT generic AI design.
+Make it look like a real production protocol dashboard.</div>
+  </div>
+</section>
+
+<!-- PARALLEL STRATEGY -->
+<section class="section" id="parallel">
+  <h2 class="sec-title"><span class="num">15</span>Parallel Build Strategy (Max Plan Power Move)</h2>
+  <div class="sec-divider"></div>
+
+  <p>With Max Plan you can run 3 Claude Code agents simultaneously using <strong>git worktrees</strong>. Each agent works in an isolated branch on a different package.</p>
+
+  <div class="code-wrap">
+    <div class="code-header"><span class="code-lang">Bash — 3 Parallel Agents Setup</span><button class="copy-btn" onclick="copyCode(this)">COPY</button></div>
+    <pre><code># Initial repo setup
+mkdir agenteconomy-cardano && cd agenteconomy-cardano
+git init
+mkdir -p packages/{contracts,sdk-ts,sdk-python,api,indexer,dashboard}
+cp CLAUDE.md ./ && cp SPEC.md ./
+
+# Install Aiken
+curl -sSfL https://install.aiken-lang.org | bash
+cd packages/contracts && aiken new . --name agenteconomy && cd ../..
+
+# Create git worktrees for parallel work
+git worktree add ../contracts-work  -b feat/contracts
+git worktree add ../sdk-ts-work     -b feat/sdk-ts
+git worktree add ../sdk-python-work -b feat/sdk-python
+
+# === OPEN 3 TERMINALS ===
+
+# Terminal 1 — Smart Contracts (start here first, others need plutus.json)
+cd ../contracts-work/packages/contracts
+claude
+# → Paste Session 1 prompt
+
+# Terminal 2 — TypeScript SDK (can start in parallel)
+cd ../sdk-ts-work/packages/sdk-ts
+claude
+# → Paste Session 2 prompt
+
+# Terminal 3 — Python SDK (can start in parallel)
+cd ../sdk-python-work/packages/sdk-python
+claude
+# → Paste Session 3 prompt
+
+# After contracts are done and plutus.json exists:
+# Terminal 4 — REST API
+cd packages/api && claude  # → Paste Session 4 prompt
+
+# Terminal 5 — Indexer (parallel with API)
+cd packages/indexer && claude  # → Paste Session 5 prompt
+
+# After API is stable:
+# Terminal 6 — Dashboard
+cd packages/dashboard && claude  # → Paste Session 6 prompt</code></pre>
+  </div>
+
+  <div class="callout callout-gold">
+    <div class="callout-title">Max Plan Usage Tip</div>
+    Opus 4.6 consumes ~5× more tokens than Sonnet for the same task. Use <code class="inline">/model sonnet</code> for Sessions 3 (Python SDK), 5 (Indexer), and the boilerplate parts of Session 6 (route scaffolding). Switch to Opus for the smart contracts and the complex API architecture decisions.
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section class="section" id="roadmap">
+  <h2 class="sec-title"><span class="num">16</span>Complete Build Roadmap</h2>
+  <div class="sec-divider"></div>
+
+  <div class="phase-list">
+    <div class="phase-item">
+      <div class="phase-num">0</div>
+      <div class="phase-content">
+        <div class="phase-title">Foundation Setup</div>
+        <div class="phase-time">DAY 1 — ~30 minutes</div>
+        <p>Create monorepo, install Aiken, set up Blockfrost account, write CLAUDE.md + SPEC.md, fund Preprod wallet at testnet faucet. Install Claude Code: <code class="inline">npm install -g @anthropic-ai/claude-code</code></p>
+      </div>
+    </div>
+    <div class="phase-item">
+      <div class="phase-num">1</div>
+      <div class="phase-content">
+        <div class="phase-title">Smart Contracts (Session 1)</div>
+        <div class="phase-time">DAYS 1–3 — Critical Path</div>
+        <p>All Aiken validators written and unit tested. <code class="inline">aiken check</code> passes 100%. <code class="inline">aiken build</code> produces plutus.json with script hashes. Everything downstream depends on this output.</p>
+      </div>
+    </div>
+    <div class="phase-item">
+      <div class="phase-num">2</div>
+      <div class="phase-content">
+        <div class="phase-title">TypeScript + Python SDKs (Sessions 2 & 3 Parallel)</div>
+        <div class="phase-time">DAYS 2–4 — Can start before contracts finish</div>
+        <p>Both SDKs built and unit-tested simultaneously using git worktrees. First real blockchain interaction happens here — agent sends first test transaction on Preprod.</p>
+      </div>
+    </div>
+    <div class="phase-item">
+      <div class="phase-num">3</div>
+      <div class="phase-content">
+        <div class="phase-title">REST API + Indexer (Sessions 4 & 5 Parallel)</div>
+        <div class="phase-time">DAYS 4–6</div>
+        <p>Full Fastify API with all 40+ endpoints live. Ponder indexer watching Preprod BountyRegistry address. First end-to-end API call returns real bounty data from chain.</p>
+      </div>
+    </div>
+    <div class="phase-item">
+      <div class="phase-num">4</div>
+      <div class="phase-content">
+        <div class="phase-title">Dashboard (Session 6)</div>
+        <div class="phase-time">DAYS 6–9</div>
+        <p>Next.js dashboard with all 13 pages deployed to Vercel. Human can post a bounty in browser. Agent operator can view wallet and active bounties. Real-time WebSocket feed working.</p>
+      </div>
+    </div>
+    <div class="phase-item">
+      <div class="phase-num">5</div>
+      <div class="phase-content">
+        <div class="phase-title">End-to-End Integration Test</div>
+        <div class="phase-time">DAYS 9–10</div>
+        <p>Complete loop on Preprod: Human posts bounty → LangChain agent discovers → agent claims → agent executes → agent submits → optimistic window passes → ADA released to agent wallet. Record demo video.</p>
+      </div>
+    </div>
+    <div class="phase-item">
+      <div class="phase-num">6</div>
+      <div class="phase-content">
+        <div class="phase-title">Security Audit + Hardening</div>
+        <div class="phase-time">WEEKS 3–5</div>
+        <p>Engage external smart contract auditor (TxPipe or MLabs). Fix any critical/high findings. Load test API to 1,000 req/min. Complete documentation. Apply for Project Catalyst grant.</p>
+      </div>
+    </div>
+    <div class="phase-item">
+      <div class="phase-num">7</div>
+      <div class="phase-content">
+        <div class="phase-title">🚀 Mainnet Launch</div>
+        <div class="phase-time">WEEK 6+</div>
+        <p>Deploy contracts to Cardano mainnet. Seed 10 real ADA bounties. Publish @agenteconomy/sdk to npm and agenteconomy to PyPI. Post demo video: "AI agent earns its first real ADA." GitHub repo goes live with MIT License.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COSTS -->
+<section class="section" id="costs">
+  <h2 class="sec-title"><span class="num">17</span>Monthly Infrastructure Cost Breakdown</h2>
+  <div class="sec-divider"></div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Service</th><th>Plan</th><th>Monthly Cost USD</th></tr></thead>
+      <tbody>
+        <tr><td>Railway (API + Indexer + Workers)</td><td>Hobby → Pro</td><td>$20–100</td></tr>
+        <tr><td>Supabase (PostgreSQL)</td><td>Pro plan</td><td>$25</td></tr>
+        <tr><td>Upstash (Redis)</td><td>Pay-as-you-go</td><td>$5–20</td></tr>
+        <tr><td>Blockfrost (Cardano API)</td><td>Starter paid plan</td><td>$10</td></tr>
+        <tr><td>Vercel (Frontend)</td><td>Pro plan</td><td>$20</td></tr>
+        <tr><td>Cloudflare R2 (Object Storage)</td><td>Pay-as-you-go</td><td>$1–5</td></tr>
+        <tr><td>web3.storage (IPFS primary)</td><td>Free → paid as data grows</td><td>$0–30</td></tr>
+        <tr><td>Pinata (IPFS backup pinning)</td><td>Picnic plan</td><td>$20</td></tr>
+        <tr><td>SendGrid / Resend (Email)</td><td>Essentials</td><td>$20</td></tr>
+        <tr><td>Sentry (Error monitoring)</td><td>Team plan</td><td>$26</td></tr>
+        <tr><td>Clerk (Human auth)</td><td>Free (&lt;10K MAU)</td><td>$0–25</td></tr>
+        <tr><td>PostHog (Analytics)</td><td>Free (1M events)</td><td>$0</td></tr>
+        <tr><td><strong>TOTAL (Month 1–3)</strong></td><td>—</td><td><strong>$147–$301/month</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-gold">
+    <div class="callout-title">💡 Project Catalyst Funding</div>
+    Apply for Project Catalyst funding — Cardano's $50M+ community grants program. This project qualifies under the <strong>Developer Ecosystem</strong> category for up to $200,000 USD in ADA. Frame it as: <em>"Open-source agent economy infrastructure for the Cardano ecosystem."</em> Apply at <strong>projectcatalyst.io</strong> in the next funding round. Your spec document is essentially already your proposal.
+  </div>
+</section>
+
+<!-- FOOTER -->
+<div class="divider"></div>
+<div style="padding: 24px 0 0; text-align: center;">
+  <p style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--slate); letter-spacing: 0.08em;">
+    AGENTECONOMY ON CARDANO · MIT LICENSE · BUILT FOR THE OPENCLAW AGENT COMMUNITY<br/>
+    Complete Technical Specification v1.0 · All content generated for development reference
+  </p>
+</div>
+
+</main>
+
+<!-- SCROLL TO TOP -->
+<button id="scrolltop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+// ── Copy code blocks ──────────────────────────
+function copyCode(btn) {
+  const pre = btn.closest('.code-wrap').querySelector('pre code');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = 'COPIED!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'COPY'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ── Copy prompt blocks ────────────────────────
+function copyPrompt(btn) {
+  const body = btn.closest('.prompt-block').querySelector('.prompt-body');
+  navigator.clipboard.writeText(body.innerText).then(() => {
+    btn.textContent = 'COPIED!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'COPY'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ── Active nav link on scroll ─────────────────
+const sections = document.querySelectorAll('section[id], .section[id], h3[id]');
+const navLinks = document.querySelectorAll('nav a');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id;
+      navLinks.forEach(a => {
+        a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+sections.forEach(s => observer.observe(s));
+document.querySelectorAll('[id]').forEach(el => observer.observe(el));
+
+// ── Scroll to top button ──────────────────────
+const scrollBtn = document.getElementById('scrolltop');
+window.addEventListener('scroll', () => {
+  scrollBtn.classList.toggle('show', window.scrollY > 400);
+});
+
+// ── Sidebar search ────────────────────────────
+document.getElementById('search-input').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  navLinks.forEach(a => {
+    const match = a.textContent.toLowerCase().includes(q);
+    a.style.display = q === '' || match ? 'block' : 'none';
+  });
+});
+
+// ── Smooth anchor navigation ──────────────────
+navLinks.forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+</script>
+</body>
+</html>

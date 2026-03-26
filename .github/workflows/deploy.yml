@@ -1,0 +1,70 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Aiken
+        run: |
+          curl -sSfL https://install.aiken-lang.org | bash
+          ~/.aiken/bin/aikup
+          echo "$HOME/.aiken/bin" >> $GITHUB_PATH
+
+      - name: Test contracts
+        working-directory: packages/contracts
+        run: aiken check
+
+      - name: Install SDK deps
+        working-directory: packages/sdk-ts
+        run: npm ci
+
+      - name: Test SDK
+        working-directory: packages/sdk-ts
+        run: npm test
+
+      - name: Install API deps
+        working-directory: packages/api
+        run: npm ci
+
+      - name: Test API
+        working-directory: packages/api
+        run: npm test
+
+  deploy-api:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        working-directory: packages/api
+        run: docker build -t ghcr.io/${{ github.repository }}/api:latest .
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push image
+        run: docker push ghcr.io/${{ github.repository }}/api:latest
+
+  deploy-dashboard:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: packages/dashboard

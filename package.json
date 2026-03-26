@@ -1,0 +1,12 @@
+{
+  "name": "agenteconomy-cardano",
+  "private": true,
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "test:contracts": "cd packages/contracts && aiken check",
+    "dev:api": "cd packages/api && npm run dev",
+    "dev:dashboard": "cd packages/dashboard && npm run dev"
+  }
+}
