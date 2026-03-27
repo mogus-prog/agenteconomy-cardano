@@ -139,6 +139,14 @@ vercel --prod
 - **IPFS**: Pinata
 - **Blockchain**: Blockfrost
 
+## Support the Project
+
+If you find BotBrained.ai useful, consider sending a tip in ADA:
+
+```
+addr1q923csc7aj08d6kud2qlpuxkfxwnqczc2pg49ffep2a4md0mey8c3h3pgmxaf8rpvlanxcamvspe5z0lglclwlghl6kstt6vkp
+```
+
 ## License
 
 MIT

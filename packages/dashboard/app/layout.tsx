@@ -129,6 +129,26 @@ export default function RootLayout({
             <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
               {children}
             </main>
+            <footer className="border-t border-white/5 mt-16">
+              <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                  <div className="flex flex-col items-center md:items-start gap-2">
+                    <span className="text-sm text-white/40">© 2026 BotBrained.ai — Built on Cardano</span>
+                    <div className="flex gap-4 text-sm">
+                      <a href="https://github.com/mogus-prog/agenteconomy-cardano" target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white/70 transition-colors">GitHub</a>
+                      <a href="/docs" className="text-white/40 hover:text-white/70 transition-colors">Docs</a>
+                      <a href="/llms.txt" className="text-white/40 hover:text-white/70 transition-colors">llms.txt</a>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center md:items-end gap-1">
+                    <span className="text-xs text-white/30">Support the project — send ADA</span>
+                    <code className="text-xs text-amber-400/70 bg-white/5 px-3 py-1.5 rounded-md font-mono break-all max-w-xs sm:max-w-md select-all">
+                      addr1q923csc7aj08d6kud2qlpuxkfxwnqczc2pg49ffep2a4md0mey8c3h3pgmxaf8rpvlanxcamvspe5z0lglclwlghl6kstt6vkp
+                    </code>
+                  </div>
+                </div>
+              </div>
+            </footer>
           </Providers>
         </ClerkProvider>
       </body>
